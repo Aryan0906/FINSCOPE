@@ -1,12 +1,44 @@
+# =============================================================
+# FINSCOPE INDIA — Dockerfile.airflow
+# Sprint 1: Custom Airflow image with Spark/Delta Lake support
+# =============================================================
+
 FROM apache/airflow:2.8.4-python3.11
 
+# ─────────────────────────────────────────────────────────────
+# ROOT: Install system dependencies
+# ─────────────────────────────────────────────────────────────
 USER root
-RUN apt-get update && apt-get install -y \
+
+# Install Java 17 (required for Spark connectivity), OCR tools, curl for healthchecks
+RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     poppler-utils \
+    openjdk-17-jdk-headless \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Set JAVA_HOME for Spark
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Create Delta Lake directory with proper permissions
+RUN mkdir -p /opt/delta-lake && chown airflow:root /opt/delta-lake
+
+# ─────────────────────────────────────────────────────────────
+# AIRFLOW: Install Python dependencies
+# ─────────────────────────────────────────────────────────────
 USER airflow
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy and install requirements
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Set Spark environment variables for PySpark
+ENV SPARK_HOME=/opt/bitnami/spark
+ENV PYSPARK_PYTHON=python3
+ENV PYSPARK_DRIVER_PYTHON=python3
+
+# Ensure PYTHONPATH includes airflow home
+ENV PYTHONPATH=/opt/airflow:${PYTHONPATH}

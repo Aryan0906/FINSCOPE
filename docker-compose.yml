@@ -1,10 +1,7 @@
-version: "3.9"
-
-# ============================================================
-# NSE Stock Market Pipeline — docker-compose.yml
-# Rule 2: ChromaDB uses named volume + IS_PERSISTENT=TRUE
-# Rule 5: Airflow depends_on postgres (db_init runs first)
-# ============================================================
+# =============================================================
+# FINSCOPE INDIA — docker-compose.yml
+# Sprint 1: Infrastructure — 9 services, zero data flow
+# =============================================================
 
 x-airflow-common: &airflow-common
   build:
@@ -12,45 +9,54 @@ x-airflow-common: &airflow-common
     dockerfile: Dockerfile.airflow
   env_file: .env
   environment:
+    # Airflow core config
     PYTHONPATH: /opt/airflow
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    AIRFLOW__SMTP__SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
-    AIRFLOW__SMTP__SMTP_STARTTLS: "true"
-    AIRFLOW__SMTP__SMTP_SSL: "false"
-    AIRFLOW__SMTP__SMTP_USER: ${SMTP_USER:-""}
-    AIRFLOW__SMTP__SMTP_PASSWORD: ${SMTP_PASSWORD:-""}
-    AIRFLOW__SMTP__SMTP_PORT: 587
-    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${SMTP_USER:-noreply@nse-pipeline.local}
-    # Pass-through env vars for pipeline code
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    # Postgres connection for pipeline code
     POSTGRES_HOST: postgres
-    POSTGRES_PORT: 5432
+    POSTGRES_PORT: "5432"
     POSTGRES_DB: ${POSTGRES_DB}
     POSTGRES_USER: ${POSTGRES_USER}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER}
+    POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD}
+    # ChromaDB connection
     CHROMADB_HOST: chromadb
-    CHROMADB_PORT: 8000
+    CHROMADB_PORT: "8000"
+    # Kafka connection
+    KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    # Spark connection
+    SPARK_MASTER_URL: spark://spark-master:7077
+    # HuggingFace API
     HF_API_TOKEN: ${HF_API_TOKEN}
+    # NSE symbols
+    NSE_SYMBOLS: ${NSE_SYMBOLS}
   volumes:
     - ./backend/dags:/opt/airflow/dags
     - ./backend:/opt/airflow/backend
+    - ./frontend:/opt/airflow/frontend
     - ./data:/opt/airflow/data
-    - ./logs:/opt/airflow/logs
+    - airflow_logs:/opt/airflow/logs
     - airflow_plugins:/opt/airflow/plugins
+    - delta_lake_data:/opt/delta-lake
   depends_on:
     postgres:
       condition: service_healthy
+    kafka:
+      condition: service_healthy
 
 services:
-  # ----------------------------------------------------------
-  # PostgreSQL 15 — primary datastore (Rules 5, 6, 8)
-  # ----------------------------------------------------------
+  # ════════════════════════════════════════════════════════════
+  # 1. POSTGRESQL — Primary datastore
+  # ════════════════════════════════════════════════════════════
   postgres:
     image: postgres:15-alpine
-    container_name: nse_postgres
+    container_name: finscope_postgres
     restart: unless-stopped
     env_file: .env
     environment:
@@ -61,7 +67,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro   # runs 01_schema.sql on first boot
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -69,30 +75,133 @@ services:
       retries: 5
       start_period: 30s
 
-  # ----------------------------------------------------------
-  # ChromaDB — vector store (Rule 2: persistent volume)
-  # IS_PERSISTENT must always be TRUE — never in-memory
-  # ----------------------------------------------------------
+  # ════════════════════════════════════════════════════════════
+  # 2. CHROMADB — Vector store for embeddings
+  # ════════════════════════════════════════════════════════════
   chromadb:
     image: chromadb/chroma:0.5.5
-    container_name: nse_chromadb
+    container_name: finscope_chromadb
     restart: unless-stopped
     environment:
       IS_PERSISTENT: "TRUE"
       CHROMA_SERVER_HOST: "0.0.0.0"
-      CHROMA_SERVER_HTTP_PORT: 8000
+      CHROMA_SERVER_HTTP_PORT: "8000"
       ANONYMIZED_TELEMETRY: "False"
     ports:
       - "8000:8000"
     volumes:
-      - chromadb_data:/chroma/chroma   # Rule 2: named volume, never tmpfs
+      - chromadb_data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # ----------------------------------------------------------
-  # Airflow initialiser — runs once, creates DB + admin user
-  # ----------------------------------------------------------
+  # ════════════════════════════════════════════════════════════
+  # 3. ZOOKEEPER — Kafka coordination
+  # ════════════════════════════════════════════════════════════
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: finscope_zookeeper
+    restart: unless-stopped
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_LOG4J_PROP: "WARN,CONSOLE"
+      ZOO_4LW_COMMANDS_WHITELIST: "srvr,ruok,mntr"
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/data
+      - zookeeper_logs:/datalog
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep Zookeeper || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ════════════════════════════════════════════════════════════
+  # 4. KAFKA — Message broker for streaming
+  # ════════════════════════════════════════════════════════════
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: finscope_kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_RETENTION_HOURS: 168
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ════════════════════════════════════════════════════════════
+  # 5. SPARK MASTER — Cluster coordinator
+  # ════════════════════════════════════════════════════════════
+  spark-master:
+    image: spark:latest
+    container_name: finscope_spark_master
+    restart: unless-stopped
+    environment:
+      SPARK_MODE: master
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: "7077"
+      SPARK_MASTER_WEBUI_PORT: "8090"
+      SPARK_NO_DAEMONIZE: "true"
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0 --webui-port 8090
+    ports:
+      - "7077:7077"
+      - "8090:8090"
+    volumes:
+      - spark_logs:/opt/spark/logs
+      - delta_lake_data:/opt/delta-lake
+      - ./backend:/opt/spark/backend
+
+  # ════════════════════════════════════════════════════════════
+  # 6. SPARK WORKER — Processing node
+  # ════════════════════════════════════════════════════════════
+  spark-worker:
+    image: spark:latest
+    container_name: finscope_spark_worker
+    restart: unless-stopped
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: 4G
+      SPARK_WORKER_CORES: "2"
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    volumes:
+      - spark_logs:/opt/spark/logs
+      - delta_lake_data:/opt/delta-lake
+      - ./backend:/opt/spark/backend
+    depends_on:
+      - spark-master
+
+  # ════════════════════════════════════════════════════════════
+  # 7. AIRFLOW INIT — One-time DB migration + admin user
+  # ════════════════════════════════════════════════════════════
   airflow-init:
     <<: *airflow-common
-    container_name: nse_airflow_init
+    container_name: finscope_airflow_init
     entrypoint: /bin/bash
     command:
       - -c
@@ -107,12 +216,12 @@ services:
           --email ${AIRFLOW_ADMIN_EMAIL} || true
     restart: "no"
 
-  # ----------------------------------------------------------
-  # Airflow Webserver — UI on port 8080
-  # ----------------------------------------------------------
+  # ════════════════════════════════════════════════════════════
+  # 8. AIRFLOW WEBSERVER — Web UI on port 8080
+  # ════════════════════════════════════════════════════════════
   airflow-webserver:
     <<: *airflow-common
-    container_name: nse_airflow_webserver
+    container_name: finscope_airflow_webserver
     command: webserver
     ports:
       - "8080:8080"
@@ -122,69 +231,58 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 120s
     depends_on:
       airflow-init:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
-  # ----------------------------------------------------------
-  # Airflow Scheduler — runs DAGs (Rule 5: task ordering)
-  # ----------------------------------------------------------
+  # ════════════════════════════════════════════════════════════
+  # 9. AIRFLOW SCHEDULER — DAG execution engine
+  # ════════════════════════════════════════════════════════════
   airflow-scheduler:
     <<: *airflow-common
-    container_name: nse_airflow_scheduler
+    container_name: finscope_airflow_scheduler
     command: scheduler
     restart: unless-stopped
+    volumes:
+      - ./backend/dags:/opt/airflow/dags
+      - ./backend:/opt/airflow/backend
+      - ./frontend:/opt/airflow/frontend
+      - ./data:/opt/airflow/data
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins
+      - delta_lake_data:/opt/delta-lake
     depends_on:
       airflow-init:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
-
-  # ----------------------------------------------------------
-  # Streamlit Frontend — UI on port 8501
-  # ----------------------------------------------------------
-  streamlit:
-    build:
-      context: .
-      dockerfile: Dockerfile.airflow
-    container_name: nse_streamlit
-    command: streamlit run frontend/app.py --server.port=8501 --server.address=0.0.0.0
-    ports:
-      - "8501:8501"
-    env_file: .env
-    environment:
-      PYTHONPATH: /opt/airflow
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER}
-      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD}
-      CHROMADB_HOST: chromadb
-      CHROMADB_PORT: 8000
-      HF_API_TOKEN: ${HF_API_TOKEN}
-    volumes:
-      - ./frontend:/opt/airflow/frontend
-      - ./backend:/opt/airflow/backend
-    restart: unless-stopped
-    depends_on:
-      postgres:
+      kafka:
         condition: service_healthy
-      chromadb:
-        condition: service_started
 
-# ============================================================
-# Named volumes — data outlives container restarts
-# Rule 2 enforced: chromadb_data is a persistent Docker volume
-# ============================================================
+# ════════════════════════════════════════════════════════════
+# NAMED VOLUMES — Persistent data storage
+# ════════════════════════════════════════════════════════════
 volumes:
   postgres_data:
     driver: local
   chromadb_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+  spark_logs:
+    driver: local
+  delta_lake_data:
+    driver: local
+  airflow_logs:
     driver: local
   airflow_plugins:
     driver: local
