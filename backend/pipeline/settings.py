@@ -70,6 +70,19 @@ class Settings(BaseSettings):
     etl_lookback_days: int = Field(365, alias="ETL_LOOKBACK_DAYS")
     log_level: str = Field("INFO", alias="LOG_LEVEL")
 
+    # ── Kafka (Sprint 2) ─────────────────────────────────────────────────────
+    KAFKA_BOOTSTRAP_SERVERS: str = Field("kafka:9092", alias="KAFKA_BOOTSTRAP_SERVERS")
+    KAFKA_TOPIC_PRICES: str = Field("nse_prices_raw", alias="KAFKA_TOPIC_PRICES")
+    KAFKA_TOPIC_NEWS: str = Field("nse_news_raw", alias="KAFKA_TOPIC_NEWS")
+    KAFKA_TOPIC_EARNINGS: str = Field("nse_earnings_raw", alias="KAFKA_TOPIC_EARNINGS")
+
+    # ── Spark / Delta Lake (Sprint 2) ────────────────────────────────────────
+    SPARK_MASTER_URL: str = Field("spark://spark-master:7077", alias="SPARK_MASTER_URL")
+    DELTA_LAKE_BASE_PATH: str = Field("/opt/delta-lake", alias="DELTA_LAKE_BASE_PATH")
+    BRONZE_PRICES_PATH: str = Field("/opt/delta-lake/bronze/stock_prices", alias="BRONZE_PRICES_PATH")
+    SILVER_PRICES_PATH: str = Field("/opt/delta-lake/silver/stock_prices", alias="SILVER_PRICES_PATH")
+    GOLD_PRICES_PATH: str = Field("/opt/delta-lake/gold/fact_prices", alias="GOLD_PRICES_PATH")
+
     # ── Derived DSN (built from individual fields) ───────────────────────────
     @property
     def postgres_dsn(self) -> str:
