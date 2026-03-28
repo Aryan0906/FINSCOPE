@@ -57,4 +57,8 @@ _chroma_mod = MagicMock(name="chromadb")
 _chroma_mod.HttpClient.return_value = MagicMock(name="chromadb.HttpClient_instance")
 sys.modules.setdefault("chromadb", _chroma_mod)
 
+_chroma_config = MagicMock(name="chromadb.config")
+_chroma_config.Settings = MagicMock(name="chromadb.config.Settings")
+sys.modules.setdefault("chromadb.config", _chroma_config)
+
 

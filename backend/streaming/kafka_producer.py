@@ -43,7 +43,7 @@ logging.basicConfig(
 TICKERS: List[str] = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ITC.NS"]
 
 # Kafka topic
-TOPIC = settings.KAFKA_TOPIC_PRICES if hasattr(settings, "KAFKA_TOPIC_PRICES") else "nse_prices_raw"
+TOPIC = settings.kafka_topic_prices
 
 # Polling interval in seconds
 POLL_INTERVAL_SECONDS = 60
@@ -145,7 +145,7 @@ class NSEKafkaProducer:
     """
     
     def __init__(self):
-        self.bootstrap_servers = getattr(settings, "KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+        self.bootstrap_servers = settings.kafka_bootstrap_servers
         self.topic = TOPIC
         self.producer = None
         self._sent_keys: set = set()  # Track sent (ticker, date) to avoid duplicates

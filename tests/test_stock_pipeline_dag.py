@@ -246,16 +246,20 @@ _fake_settings.nse_symbols = ["RELIANCE.NS", "TCS.NS"]
 _SETTINGS_MOD = _pipeline_stub(settings=_fake_settings)
 
 import sys
-for _path, _stub in {
-    "backend.pipeline.db_init":    _DB_INIT,
-    "backend.pipeline.extract":    _EXTRACT,
-    "backend.pipeline.news_ingest": _NEWS_INGEST,
+_STUBS = {
+    "backend.pipeline.db_init":         _DB_INIT,
+    "backend.pipeline.extract":         _EXTRACT,
+    "backend.pipeline.news_ingest":     _NEWS_INGEST,
     "backend.pipeline.earnings_ingest": _EARNINGS_INGEST,
-    "backend.pipeline.load":       _LOAD,
-    "backend.pipeline.transform":  _TRANSFORM,
-    "backend.pipeline.settings":   _SETTINGS_MOD,
-}.items():
-    if _path not in sys.modules:
+    "backend.pipeline.load":            _LOAD,
+    "backend.pipeline.transform":       _TRANSFORM,
+    "backend.pipeline.settings":        _SETTINGS_MOD,
+}
+# Only register stubs for modules not already loaded as REAL modules
+for _path, _stub in _STUBS.items():
+    existing = sys.modules.get(_path)
+    # A real module has a __file__ attribute; a stub (MagicMock/ModuleType) does not
+    if existing is None or not hasattr(existing, "__file__") or existing.__file__ is None:
         sys.modules[_path] = _stub
 
 
