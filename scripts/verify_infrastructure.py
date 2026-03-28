@@ -30,11 +30,11 @@ def check_postgresql() -> Tuple[bool, str, float]:
     try:
         # When running from host, use localhost and credentials from .env
         conn = psycopg2.connect(
-            host="localhost",
-            port=5432,
-            database="finscope",
-            user="finscope_admin",
-            password="finscope_dev_password_2024",
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=int(os.getenv("POSTGRES_PORT", 5432)),
+            database=os.getenv("POSTGRES_DB"),
+            user=os.getenv("POSTGRES_USER"),
+            password=os.getenv("POSTGRES_PASSWORD"),
             connect_timeout=10
         )
         cursor = conn.cursor()

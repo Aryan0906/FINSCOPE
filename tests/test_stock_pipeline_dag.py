@@ -232,6 +232,7 @@ def _pipeline_stub(**attrs) -> types.ModuleType:
 _DB_INIT   = _pipeline_stub(run=MagicMock(return_value=None))
 _EXTRACT   = _pipeline_stub(run=MagicMock(return_value=0))
 _NEWS_INGEST = _pipeline_stub(run=MagicMock(return_value=0))
+_EARNINGS_INGEST = _pipeline_stub(run=MagicMock(return_value=0))
 _LOAD      = _pipeline_stub(run=MagicMock(return_value=0))
 _TRANSFORM = _pipeline_stub(
     run=MagicMock(return_value=0),
@@ -244,15 +245,18 @@ _fake_settings = MagicMock()
 _fake_settings.nse_symbols = ["RELIANCE.NS", "TCS.NS"]
 _SETTINGS_MOD = _pipeline_stub(settings=_fake_settings)
 
+import sys
 for _path, _stub in {
     "backend.pipeline.db_init":    _DB_INIT,
     "backend.pipeline.extract":    _EXTRACT,
     "backend.pipeline.news_ingest": _NEWS_INGEST,
+    "backend.pipeline.earnings_ingest": _EARNINGS_INGEST,
     "backend.pipeline.load":       _LOAD,
     "backend.pipeline.transform":  _TRANSFORM,
     "backend.pipeline.settings":   _SETTINGS_MOD,
 }.items():
-    sys.modules.setdefault(_path, _stub)
+    if _path not in sys.modules:
+        sys.modules[_path] = _stub
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -281,6 +285,7 @@ EXPECTED_TASK_IDS: list[str] = [
     "db_init",
     "extract_prices",
     "news_ingest",
+    "earnings_ingest",
     "transform_prices",
     "transform_news",
     "load_gold",
@@ -292,8 +297,10 @@ EXPECTED_EDGES: list[tuple[str, str]] = [
     ("db_init", "extract_prices"),
     ("db_init", "news_ingest"),
     ("extract_prices", "transform_prices"),
+    ("extract_prices", "earnings_ingest"),
     ("news_ingest", "transform_news"),
     ("transform_prices", "load_gold"),
+    ("earnings_ingest", "load_gold"),
     ("transform_news", "load_gold"),
     ("load_gold", "create_views"),
     ("create_views", "validate_schema"),
@@ -341,7 +348,7 @@ class TestDagMetadata:
 
 
 class TestTaskCount:
-    def test_exactly_eight_tasks(self):
+    def test_exactly_nine_tasks(self):
         actual   = sorted(t.task_id for t in _dag().tasks)
         expected = sorted(EXPECTED_TASK_IDS)
         assert actual == expected, f"Expected {expected}, got {actual}"
@@ -380,7 +387,7 @@ class TestDependencyGraph:
         assert _upstream("extract_prices") == {"db_init"}
 
     def test_extract_prices_downstream(self):
-        assert _downstream("extract_prices") == {"transform_prices"}
+        assert _downstream("extract_prices") == {"transform_prices", "earnings_ingest"}
 
     def test_news_ingest_upstream(self):
         assert _upstream("news_ingest") == {"db_init"}
@@ -401,7 +408,7 @@ class TestDependencyGraph:
         assert _downstream("transform_news") == {"load_gold"}
 
     def test_load_gold_fanin(self):
-        assert _upstream("load_gold") == {"transform_prices", "transform_news"}
+        assert _upstream("load_gold") == {"transform_prices", "transform_news", "earnings_ingest"}
 
     def test_load_gold_downstream(self):
         assert _downstream("load_gold") == {"create_views"}

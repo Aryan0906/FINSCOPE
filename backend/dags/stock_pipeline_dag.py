@@ -125,7 +125,7 @@ def _task_earnings_ingest(symbols: list[str], **_: object) -> int:
     return earnings_ingest.run(symbols=symbols)
 
 
-def _task_transform_prices(symbols: list[str], **_: object) -> int:
+def _task_transform_prices(symbols: list[str], **_: object) -> dict[str, int]:
     """Task 4 — Clean prices/fundamentals, compute indicators → silver layer.
 
     Calls the module-level transform_prices() + transform_fundamentals() for
@@ -138,7 +138,7 @@ def _task_transform_prices(symbols: list[str], **_: object) -> int:
         totals["prices"] += transform_prices(sym, run_date)
         totals["fundamentals"] += transform_fundamentals(sym)
     logger.info("transform_prices complete: %s", totals)
-    return totals["prices"] + totals["fundamentals"]
+    return totals
 
 
 def _task_transform_news(symbols: list[str], **_: object) -> int:
@@ -233,7 +233,7 @@ with DAG(
         "[transform_prices ‖ earnings_ingest ‖ transform_news] → load_gold → create_views → validate_schema"
     ),
     default_args=DEFAULT_ARGS,
-    schedule="0 * * * *",   # Every hour, 24/7
+    schedule="30 13 * * 1-5",   # 6:30 PM IST weekdays
     start_date=datetime(2025, 1, 1),
     catchup=False,
     max_active_runs=1,

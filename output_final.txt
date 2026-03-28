@@ -1,0 +1,48 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Program Files\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: D:\FINSCOPE
+plugins: anyio-4.12.1, dash-4.0.0, cov-7.0.0
+collecting ... collected 108 items / 3 errors
+
+=================================== ERRORS ====================================
+__________________ ERROR collecting tests/test_embeddings.py __________________
+ImportError while importing test module 'D:\FINSCOPE\tests\test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Program Files\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_embeddings.py:4: in <module>
+    from backend.ml.embeddings import EmbeddingManager, EMBEDDING_MODEL_NAME
+backend\ml\embeddings.py:7: in <module>
+    from chromadb.config import Settings as ChromaSettings
+E   ModuleNotFoundError: No module named 'chromadb.config'; 'chromadb' is not a package
+_____________________ ERROR collecting tests/test_rag.py ______________________
+ImportError while importing test module 'D:\FINSCOPE\tests\test_rag.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Program Files\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_rag.py:4: in <module>
+    from backend.ml.rag_query import RAGQueryEngine
+backend\ml\rag_query.py:5: in <module>
+    from chromadb.config import Settings as ChromaSettings
+E   ModuleNotFoundError: No module named 'chromadb.config'; 'chromadb' is not a package
+__________________ ERROR collecting tests/test_transform.py ___________________
+ImportError while importing test module 'D:\FINSCOPE\tests\test_transform.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Program Files\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_transform.py:11: in <module>
+    from backend.pipeline.transform import (
+E   ImportError: cannot import name '_calc_sma' from '_stub' (unknown location)
+=========================== short test summary info ===========================
+ERROR tests/test_embeddings.py
+ERROR tests/test_rag.py
+ERROR tests/test_transform.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!
+============================== 3 errors in 1.86s ==============================
