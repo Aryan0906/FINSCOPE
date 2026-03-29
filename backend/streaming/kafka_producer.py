@@ -295,6 +295,55 @@ class NSEKafkaProducer:
 # Main entry point
 # ─────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def main():
+    """
+    Entry point with CLI arguments.
+    
+    Usage:
+        python -m backend.streaming.kafka_producer           # Run continuous polling
+        python -m backend.streaming.kafka_producer --oneshot # Fetch historical and exit
+        python -m backend.streaming.kafka_producer --lookback 30  # Fetch last 30 days and exit
+    """
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="NSE Kafka Producer")
+    parser.add_argument(
+        "--oneshot",
+        action="store_true",
+        help="Fetch historical data and exit (no polling loop)",
+    )
+    parser.add_argument(
+        "--lookback",
+        type=int,
+        default=STARTUP_LOOKBACK_DAYS,
+        help=f"Days of historical data to fetch (default: {STARTUP_LOOKBACK_DAYS})",
+    )
+    args = parser.parse_args()
+    
     producer = NSEKafkaProducer()
-    producer.run()
+    
+    if args.oneshot or args.lookback != STARTUP_LOOKBACK_DAYS:
+        # One-shot mode: fetch specified lookback and exit
+        logger.info("Running in one-shot mode with %d days lookback", args.lookback)
+        end_date = date.today()
+        start_date = end_date - timedelta(days=args.lookback)
+        
+        total_sent = 0
+        for ticker in TICKERS:
+            logger.info("Fetching %s [%s → %s]", ticker, start_date, end_date)
+            df = get_nse_prices(ticker, start_date, end_date)
+            sent = producer.send_prices(ticker, df)
+            total_sent += sent
+            time.sleep(1)
+        
+        logger.info("One-shot complete: %d messages sent to %s", total_sent, producer.topic)
+        if producer.producer:
+            producer.producer.flush()
+            producer.producer.close()
+    else:
+        # Continuous mode
+        producer.run()
+
+
+if __name__ == "__main__":
+    main()

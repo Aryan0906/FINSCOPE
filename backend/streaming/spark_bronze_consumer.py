@@ -261,11 +261,114 @@ class SparkBronzeConsumer:
                 self.spark.stop()
                 logger.info("SparkSession stopped")
 
+    def run_batch(self):
+        """
+        Batch mode: read all existing Kafka messages once and exit.
+        Useful for backfilling or testing.
+        """
+        logger.info("=" * 60)
+        logger.info("FINSCOPE Bronze Consumer — BATCH MODE")
+        logger.info("=" * 60)
+
+        # Create Spark session
+        self.spark = self._create_spark_session()
+
+        # Read from Kafka in BATCH mode (not streaming)
+        logger.info("Reading batch from Kafka topic: %s", self.config["kafka_topic"])
+        kafka_df = (
+            self.spark.read
+            .format("kafka")
+            .option("kafka.bootstrap.servers", self.config["kafka_bootstrap_servers"])
+            .option("subscribe", self.config["kafka_topic"])
+            .option("startingOffsets", "earliest")
+            .option("endingOffsets", "latest")
+            .load()
+        )
+
+        row_count = kafka_df.count()
+        logger.info("Kafka messages read: %d", row_count)
+
+        if row_count == 0:
+            logger.warning("No messages in Kafka topic — nothing to write")
+            self.spark.stop()
+            return 0
+
+        # Parse JSON from Kafka value column
+        parsed_df = (
+            kafka_df
+            .selectExpr("CAST(value AS STRING) as json_value")
+            .select(from_json(col("json_value"), PRICE_SCHEMA).alias("data"))
+            .select("data.*")
+        )
+
+        # Cast trade_date and ingested_at
+        transformed_df = (
+            parsed_df
+            .withColumn("trade_date", to_date(col("trade_date"), "yyyy-MM-dd"))
+            .withColumn("ingested_at", to_timestamp(col("ingested_at")))
+        )
+
+        # Add partition columns
+        with_partitions = (
+            transformed_df
+            .withColumn("year", year(col("trade_date")))
+            .withColumn("month", month(col("trade_date")))
+        )
+
+        # Data quality filter: close must be > 0 and not null
+        valid_df = with_partitions.filter(
+            (col("close").isNotNull()) & (col("close") > 0)
+        )
+
+        valid_count = valid_df.count()
+        logger.info("Valid rows after filtering: %d", valid_count)
+
+        # Write to Bronze Delta Lake
+        bronze_path = self.config["bronze_path"]
+        logger.info("Writing to Bronze: %s", bronze_path)
+
+        (
+            valid_df.write
+            .format("delta")
+            .mode("append")
+            .partitionBy("ticker", "year", "month")
+            .save(bronze_path)
+        )
+
+        logger.info("✓ Batch complete: %d rows written to Bronze", valid_count)
+        self.spark.stop()
+        return valid_count
+
 
 # ─────────────────────────────────────────────────
 # Main entry point
 # ─────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def main():
+    """
+    Entry point with CLI arguments.
+
+    Usage:
+        python spark_bronze_consumer.py           # Run streaming (continuous)
+        python spark_bronze_consumer.py --batch   # Run batch (process and exit)
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Spark Bronze Consumer")
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="Run in batch mode: process existing Kafka messages and exit",
+    )
+    args = parser.parse_args()
+
     consumer = SparkBronzeConsumer()
-    consumer.run()  # blocking — runs until stopped
+
+    if args.batch:
+        consumer.run_batch()
+    else:
+        consumer.run()  # blocking — runs until stopped
+
+
+if __name__ == "__main__":
+    main()
