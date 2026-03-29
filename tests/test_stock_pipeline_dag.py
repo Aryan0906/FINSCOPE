@@ -221,6 +221,7 @@ sys.modules.setdefault("airflow.utils", _utils)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stub the pipeline modules (only leaf modules — backend/ stays a real package)
+# Deferred via pytest hook to avoid clobbering real modules loaded by test_transform.py
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _pipeline_stub(**attrs) -> types.ModuleType:
@@ -245,7 +246,6 @@ _fake_settings = MagicMock()
 _fake_settings.nse_symbols = ["RELIANCE.NS", "TCS.NS"]
 _SETTINGS_MOD = _pipeline_stub(settings=_fake_settings)
 
-import sys
 _STUBS = {
     "backend.pipeline.db_init":         _DB_INIT,
     "backend.pipeline.extract":         _EXTRACT,
@@ -255,16 +255,18 @@ _STUBS = {
     "backend.pipeline.transform":       _TRANSFORM,
     "backend.pipeline.settings":        _SETTINGS_MOD,
 }
-# Only register stubs for modules not already loaded as REAL modules
-for _path, _stub in _STUBS.items():
-    existing = sys.modules.get(_path)
-    # A real module has a __file__ attribute; a stub (MagicMock/ModuleType) does not
-    if existing is None or not hasattr(existing, "__file__") or existing.__file__ is None:
-        sys.modules[_path] = _stub
+
+def _install_stubs():
+    """Install stubs only for modules not already loaded as real modules."""
+    for _path, _stub in _STUBS.items():
+        existing = sys.modules.get(_path)
+        # A real module has a __file__ attribute; a stub does not
+        if existing is None or not hasattr(existing, "__file__") or existing.__file__ is None:
+            sys.modules[_path] = _stub
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Load the DAG module from disk (bypass package import machinery)
+# Lazy DAG loading: stubs installed and DAG loaded ONLY when first test runs
 # ─────────────────────────────────────────────────────────────────────────────
 
 _DAG_FILE = (
@@ -272,13 +274,30 @@ _DAG_FILE = (
     / "backend" / "dags" / "stock_pipeline_dag.py"
 )
 
-_spec = importlib.util.spec_from_file_location(
-    "backend.dags.stock_pipeline_dag",
-    str(_DAG_FILE),
-)
-dag_module = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
-sys.modules["backend.dags.stock_pipeline_dag"] = dag_module
-_spec.loader.exec_module(dag_module)  # type: ignore[union-attr]
+dag_module = None  # Populated lazily by _ensure_dag_loaded()
+
+
+def _ensure_dag_loaded():
+    """
+    Install stubs and load the DAG module lazily.
+    This ensures test_transform.py (which uses the real transform module) can
+    import first without our stubs clobbering it.
+    """
+    global dag_module
+    if dag_module is not None:
+        return  # Already loaded
+
+    # Install stubs now (test collection is complete)
+    _install_stubs()
+
+    # Load the DAG module from disk
+    _spec = importlib.util.spec_from_file_location(
+        "backend.dags.stock_pipeline_dag",
+        str(_DAG_FILE),
+    )
+    dag_module = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
+    sys.modules["backend.dags.stock_pipeline_dag"] = dag_module
+    _spec.loader.exec_module(dag_module)  # type: ignore[union-attr]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -312,6 +331,7 @@ EXPECTED_EDGES: list[tuple[str, str]] = [
 
 
 def _dag() -> _DAG:
+    _ensure_dag_loaded()
     return dag_module.dag  # type: ignore[return-value]
 
 
@@ -465,25 +485,30 @@ class TestTaskCallables:
     """Smoke-test each callable with mocked pipeline modules."""
 
     def test_db_init_callable(self):
-        _DB_INIT.run.reset_mock()
-        dag_module._task_db_init()
-        _DB_INIT.run.assert_called_once_with()
+        _ensure_dag_loaded()
+        with patch.object(dag_module, "db_init") as mock_db_init:
+            mock_db_init.run = MagicMock()
+            dag_module._task_db_init()
+            mock_db_init.run.assert_called_once_with()
 
     def test_extract_prices_callable(self):
-        _EXTRACT.run.reset_mock()
-        _EXTRACT.run.return_value = 5
-        result = dag_module._task_extract_prices(symbols=["X.NS"])
-        _EXTRACT.run.assert_called_once_with(symbols=["X.NS"])
-        assert result == 5
+        _ensure_dag_loaded()
+        with patch.object(dag_module, "extract") as mock_extract:
+            mock_extract.run = MagicMock(return_value=5)
+            result = dag_module._task_extract_prices(symbols=["X.NS"])
+            mock_extract.run.assert_called_once_with(symbols=["X.NS"])
+            assert result == 5
 
     def test_news_ingest_callable(self):
-        _NEWS_INGEST.run.reset_mock()
-        _NEWS_INGEST.run.return_value = 3
-        result = dag_module._task_news_ingest(symbols=["X.NS"])
-        _NEWS_INGEST.run.assert_called_once_with(symbols=["X.NS"])
-        assert result == 3
+        _ensure_dag_loaded()
+        with patch.object(dag_module, "news_ingest") as mock_news:
+            mock_news.run = MagicMock(return_value=3)
+            result = dag_module._task_news_ingest(symbols=["X.NS"])
+            mock_news.run.assert_called_once_with(symbols=["X.NS"])
+            assert result == 3
 
     def test_transform_prices_returns_dict(self):
+        _ensure_dag_loaded()
         with (
             patch.object(dag_module, "transform_prices", return_value=10) as mp,
             patch.object(dag_module, "transform_fundamentals", return_value=1) as mf,
@@ -494,13 +519,15 @@ class TestTaskCallables:
         assert result["fundamentals"] == 1
 
     def test_transform_news_accumulates_across_symbols(self):
+        _ensure_dag_loaded()
         with patch.object(dag_module, "_transform_news_fn", return_value=7):
             result = dag_module._task_transform_news(symbols=["X.NS", "Y.NS"])
         assert result == 14  # 7 per symbol × 2
 
     def test_load_gold_callable(self):
-        _LOAD.run.reset_mock()
-        _LOAD.run.return_value = 4
-        result = dag_module._task_load_gold(symbols=["X.NS"])
-        _LOAD.run.assert_called_once_with(symbols=["X.NS"])
-        assert result == 4
+        _ensure_dag_loaded()
+        with patch.object(dag_module, "load") as mock_load:
+            mock_load.run = MagicMock(return_value=4)
+            result = dag_module._task_load_gold(symbols=["X.NS"])
+            mock_load.run.assert_called_once_with(symbols=["X.NS"])
+            assert result == 4

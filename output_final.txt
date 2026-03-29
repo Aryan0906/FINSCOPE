@@ -1,48 +1,83 @@
 ============================= test session starts =============================
-platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Program Files\Python314\python.exe
-cachedir: .pytest_cache
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0
 rootdir: D:\FINSCOPE
+configfile: pytest.ini
 plugins: anyio-4.12.1, dash-4.0.0, cov-7.0.0
-collecting ... collected 108 items / 3 errors
+collected 134 items
+
+tests\test_db_init.py ............................                       [ 20%]
+tests\test_embeddings.py EE                                              [ 22%]
+tests\test_load.py ..........                                            [ 29%]
+tests\test_rag.py EE                                                     [ 31%]
+tests\test_scd_dim_companies.py ......................                   [ 47%]
+tests\test_sql_guard.py ..F                                              [ 50%]
+tests\test_stock_pipeline_dag.py ....................................... [ 79%]
+......                                                                   [ 83%]
+tests\test_transform.py ......................                           [100%]
 
 =================================== ERRORS ====================================
-__________________ ERROR collecting tests/test_embeddings.py __________________
-ImportError while importing test module 'D:\FINSCOPE\tests\test_embeddings.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-C:\Program Files\Python314\Lib\importlib\__init__.py:88: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-tests\test_embeddings.py:4: in <module>
-    from backend.ml.embeddings import EmbeddingManager, EMBEDDING_MODEL_NAME
-backend\ml\embeddings.py:7: in <module>
-    from chromadb.config import Settings as ChromaSettings
-E   ModuleNotFoundError: No module named 'chromadb.config'; 'chromadb' is not a package
-_____________________ ERROR collecting tests/test_rag.py ______________________
-ImportError while importing test module 'D:\FINSCOPE\tests\test_rag.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-C:\Program Files\Python314\Lib\importlib\__init__.py:88: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-tests\test_rag.py:4: in <module>
-    from backend.ml.rag_query import RAGQueryEngine
-backend\ml\rag_query.py:5: in <module>
-    from chromadb.config import Settings as ChromaSettings
-E   ModuleNotFoundError: No module named 'chromadb.config'; 'chromadb' is not a package
-__________________ ERROR collecting tests/test_transform.py ___________________
-ImportError while importing test module 'D:\FINSCOPE\tests\test_transform.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-C:\Program Files\Python314\Lib\importlib\__init__.py:88: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-tests\test_transform.py:11: in <module>
-    from backend.pipeline.transform import (
-E   ImportError: cannot import name '_calc_sma' from '_stub' (unknown location)
+_______________ ERROR at setup of test_model_metadata_matching ________________
+file D:\FINSCOPE\tests\test_embeddings.py, line 7
+  def test_model_metadata_matching(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, dash_br, dash_duo, dash_duo_mp, dash_multi_process_server, dash_process_server, dash_thread_server, dashjl, dashjl_server, dashr, dashr_server, diskcache_manager, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\FINSCOPE\tests\test_embeddings.py:7
+_______________ ERROR at setup of test_model_metadata_mismatch ________________
+file D:\FINSCOPE\tests\test_embeddings.py, line 32
+  def test_model_metadata_mismatch(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, dash_br, dash_duo, dash_duo_mp, dash_multi_process_server, dash_process_server, dash_thread_server, dashjl, dashjl_server, dashr, dashr_server, diskcache_manager, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\FINSCOPE\tests\test_embeddings.py:32
+__________ ERROR at setup of test_rag_hallucination_guard_threshold ___________
+file D:\FINSCOPE\tests\test_rag.py, line 7
+  def test_rag_hallucination_guard_threshold(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, dash_br, dash_duo, dash_duo_mp, dash_multi_process_server, dash_process_server, dash_thread_server, dashjl, dashjl_server, dashr, dashr_server, diskcache_manager, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\FINSCOPE\tests\test_rag.py:7
+_________________ ERROR at setup of test_rag_successful_query _________________
+file D:\FINSCOPE\tests\test_rag.py, line 40
+  def test_rag_successful_query(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, cov, dash_br, dash_duo, dash_duo_mp, dash_multi_process_server, dash_process_server, dash_thread_server, dashjl, dashjl_server, dashr, dashr_server, diskcache_manager, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\FINSCOPE\tests\test_rag.py:40
+================================== FAILURES ===================================
+____________________ test_sql_guard_enforces_select_prefix ____________________
+tests\test_sql_guard.py:31: in test_sql_guard_enforces_select_prefix
+    guard_sql(bad_query)
+backend\ml\sql_guard.py:28: in guard_sql
+    raise SQLInjectionError(f"Forbidden keyword '{word}' in query.")
+E   backend.ml.sql_guard.SQLInjectionError: Forbidden keyword 'UPDATE' in query.
+
+During handling of the above exception, another exception occurred:
+tests\test_sql_guard.py:30: in test_sql_guard_enforces_select_prefix
+    with pytest.raises(SQLInjectionError, match="Only SELECT queries are allowed."):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Only SELECT queries are allowed.'
+E     Actual message: "Forbidden keyword 'UPDATE' in query."
+------------------------------ Captured log call ------------------------------
+ERROR    backend.ml.sql_guard:sql_guard.py:27 Rule 8 Violation: Blocked query containing 'UPDATE'. Query: UPDATE backend SET value = 1
+============================== warnings summary ===============================
+<frozen importlib._bootstrap>:491
+  <frozen importlib._bootstrap>:491: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:491
+  <frozen importlib._bootstrap>:491: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ===========================
-ERROR tests/test_embeddings.py
-ERROR tests/test_rag.py
-ERROR tests/test_transform.py
-!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!
-============================== 3 errors in 1.86s ==============================
+FAILED tests/test_sql_guard.py::test_sql_guard_enforces_select_prefix - Asser...
+ERROR tests/test_embeddings.py::test_model_metadata_matching
+ERROR tests/test_embeddings.py::test_model_metadata_mismatch
+ERROR tests/test_rag.py::test_rag_hallucination_guard_threshold
+ERROR tests/test_rag.py::test_rag_successful_query
+============= 1 failed, 129 passed, 2 warnings, 4 errors in 7.84s =============
+<sys>:0: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
