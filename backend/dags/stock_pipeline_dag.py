@@ -4,7 +4,7 @@ backend/dags/stock_pipeline_dag.py
 Airflow DAG: stock_pipeline  (Sprint 4)
 Schedule : Mon-Fri at 18:30 IST (13:00 UTC) — after NSE market closes.
 
-8-task topology (fan-out after db_init, fan-in before load_gold):
+11-task topology (fan-out after db_init, dual gold paths, fan-in before create_views):
 
         ┌─────────────────┐
         │    db_init      │   Task 1 — idempotent schema DDL
@@ -52,6 +52,7 @@ if "/opt/airflow" not in sys.path:
     sys.path.insert(0, "/opt/airflow")
 
 from airflow import DAG  # type: ignore[import-not-found]
+from airflow.operators.bash import BashOperator  # type: ignore[import-not-found]
 from airflow.operators.python import PythonOperator  # type: ignore[import-not-found]
 
 # Pipeline modules — must be importable inside the Airflow worker container.
@@ -67,6 +68,30 @@ from backend.pipeline.transform import (
 from backend.pipeline.settings import settings
 
 logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Spark job command template (used by BashOperator tasks)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_SPARK_SUBMIT_BASE = (
+    "spark-submit "
+    "--conf spark.jars.ivy=/tmp/ivy2 "
+    "--master {{ var.value.spark_master_url }} "
+)
+
+_DELTA_PKG = "io.delta:delta-spark_2.12:3.0.0"
+_DELTA_JDBC_PKG = f"{_DELTA_PKG},org.postgresql:postgresql:42.6.0"
+
+_SPARK_ENV = {
+    "POSTGRES_HOST":      "postgres",
+    "POSTGRES_PORT":      "5432",
+    "POSTGRES_DB":        "finscope",
+    "POSTGRES_USER":      "finscope_admin",
+    "POSTGRES_PASSWORD":  "{{ var.value.postgres_password }}",
+    "BRONZE_PRICES_PATH": "{{ var.value.bronze_prices_path }}",
+    "SILVER_PRICES_PATH": "{{ var.value.silver_prices_path }}",
+    "LOG_LEVEL":          "INFO",
+}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Paths to checked-in SQL helper files
@@ -229,15 +254,16 @@ def _task_validate_schema(**_: object) -> None:
 with DAG(
     dag_id="stock_pipeline",
     description=(
-        "NSE daily ETL — 9 tasks: db_init → [extract_prices ‖ news_ingest] → "
-        "[transform_prices ‖ earnings_ingest ‖ transform_news] → load_gold → create_views → validate_schema"
+        "NSE daily ETL — 11 tasks: db_init → [extract_prices ‖ news_ingest] → "
+        "[transform_prices ‖ earnings_ingest ‖ transform_news ‖ spark_silver_prices] → "
+        "[load_gold ‖ spark_gold_summary] → create_views → validate_schema"
     ),
     default_args=DEFAULT_ARGS,
     schedule="30 13 * * 1-5",   # 6:30 PM IST weekdays
     start_date=datetime(2025, 1, 1),
     catchup=False,
     max_active_runs=1,
-    tags=["nse", "finance", "etl", "sprint4"],
+    tags=["nse", "finance", "etl", "sprint4", "delta-lake"],
 ) as dag:
 
     # ── Shared op_kwargs ──────────────────────────────────────────────────────
@@ -359,27 +385,64 @@ NOTICE/WARNING messages as Airflow log entries.
 """,
     )
 
+    # ── Task 4b: PySpark Silver prices (parallel with transform_prices) ──────
+
+    t4b_spark_silver = BashOperator(
+        task_id="spark_silver_prices",
+        bash_command=(
+            _SPARK_SUBMIT_BASE
+            + f"--packages {_DELTA_PKG} "
+            + "/opt/airflow/backend/spark_jobs/silver_prices_job.py"
+        ),
+        env=_SPARK_ENV,
+        doc_md="""\
+**spark_silver_prices** — PySpark job: Delta Lake Bronze → Delta Lake Silver.
+Computes SMA/EMA/RSI/normalised_close via applyInPandas per ticker.
+Writes to Delta Lake Silver using MERGE (idempotent).
+""",
+    )
+
+    # ── Task 6b: PySpark Gold summary (after spark_silver) ───────────────────
+
+    t6b_spark_gold = BashOperator(
+        task_id="spark_gold_summary",
+        bash_command=(
+            _SPARK_SUBMIT_BASE
+            + f"--packages {_DELTA_JDBC_PKG} "
+            + "/opt/airflow/backend/spark_jobs/gold_summary_job.py"
+        ),
+        env=_SPARK_ENV,
+        doc_md="""\
+**spark_gold_summary** — PySpark job: Delta Lake Silver → PostgreSQL gold.stock_summary.
+Latest snapshot per ticker via row_number() window, written via JDBC.
+""",
+    )
+
     # ─────────────────────────────────────────────────────────────────────────
-    # Explicit dependency wiring
+    # Dependency wiring — Sprint 4 (11 tasks)
     # ─────────────────────────────────────────────────────────────────────────
     #
-    # Phase A — init:          db_init
-    # Phase B — ingest:        extract_prices   [news_ingest, earnings_ingest]  (parallel)
-    # Phase C — transform:     [transform_prices, earnings_ingest, transform_news] (parallel)
-    # Phase D — consolidate:   load_gold
-    # Phase E — finalise:      create_views → validate_schema                   (serial)
+    # Phase A: db_init
+    # Phase B: [extract_prices || news_ingest]  (parallel)
+    # Phase C: [transform_prices || earnings_ingest || transform_news
+    #           || spark_silver_prices]          (parallel, all after extract)
+    # Phase D: [load_gold || spark_gold_summary] (parallel, after their inputs)
+    # Phase E: create_views → validate_schema   (serial)
     #
-    # Fan-out after db_init:
+
     _ = t1_db_init >> [t2_extract_prices, t3_news_ingest]
 
-    # extract_prices feeds both transform_prices AND earnings_ingest:
-    _ = t2_extract_prices >> [t4_transform_prices, t3b_earnings_ingest]
+    _ = t2_extract_prices >> [t4_transform_prices, t3b_earnings_ingest, t4b_spark_silver]
 
-    # news_ingest feeds only transform_news:
     _ = t3_news_ingest >> t5_transform_news
 
-    # Fan-in: load_gold waits for BOTH transforms AND earnings_ingest to finish:
+    # load_gold waits for Python transforms + earnings
     _ = [t4_transform_prices, t5_transform_news, t3b_earnings_ingest] >> t6_load_gold
 
-    # Serial finalisation:
-    _ = t6_load_gold >> t7_create_views >> t8_validate_schema
+    # spark_gold waits for spark_silver only (reads Delta, not Postgres silver)
+    _ = t4b_spark_silver >> t6b_spark_gold
+
+    # create_views waits for BOTH gold tasks
+    _ = [t6_load_gold, t6b_spark_gold] >> t7_create_views
+
+    _ = t7_create_views >> t8_validate_schema
