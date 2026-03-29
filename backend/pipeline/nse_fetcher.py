@@ -65,15 +65,15 @@ def get_nse_prices(
                 continue
 
             # Rename columns from jugaad-data format to standard OHLCV
-            # jugaad-data stock_df returns CH_* prefixed columns
+            # jugaad-data stock_df returns uppercase columns: DATE, OPEN, HIGH, etc.
             rename_map = {
-                "CH_TIMESTAMP": "Date",
-                "CH_OPENING_PRICE": "Open",
-                "CH_HIGH_PRICE": "High",
-                "CH_LOW_PRICE": "Low",
-                "CH_CLOSING_PRICE": "Close",
-                "CH_TOT_TRADED_QTY": "Volume",
-                "CH_LAST_TRADED_PRICE": "Adj Close",
+                "DATE": "Date",
+                "OPEN": "Open",
+                "HIGH": "High",
+                "LOW": "Low",
+                "CLOSE": "Close",
+                "VOLUME": "Volume",
+                "LTP": "Adj Close",  # Last Traded Price as Adj Close
             }
             df = df.rename(columns=rename_map)
 

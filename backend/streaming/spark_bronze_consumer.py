@@ -49,20 +49,20 @@ def get_config() -> dict:
     try:
         from backend.pipeline.settings import settings
         return {
-            "kafka_bootstrap_servers": getattr(settings, "KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
-            "kafka_topic": getattr(settings, "KAFKA_TOPIC_PRICES", "nse_prices_raw"),
-            "spark_master": getattr(settings, "SPARK_MASTER_URL", "spark://spark-master:7077"),
-            "bronze_path": getattr(settings, "BRONZE_PRICES_PATH", "/opt/delta-lake/bronze/stock_prices"),
-            "delta_base": getattr(settings, "DELTA_LAKE_BASE_PATH", "/opt/delta-lake"),
+            "kafka_bootstrap_servers": settings.kafka_bootstrap_servers,
+            "kafka_topic":             settings.kafka_topic_prices,
+            "spark_master":            settings.spark_master_url,
+            "bronze_path":             settings.bronze_prices_path,
+            "delta_base":              settings.delta_lake_base_path,
         }
     except ImportError:
         logger.warning("Settings not available — using defaults")
         return {
             "kafka_bootstrap_servers": "kafka:9092",
-            "kafka_topic": "nse_prices_raw",
-            "spark_master": "spark://spark-master:7077",
-            "bronze_path": "/opt/delta-lake/bronze/stock_prices",
-            "delta_base": "/opt/delta-lake",
+            "kafka_topic":             "nse_prices_raw",
+            "spark_master":            "spark://spark-master:7077",
+            "bronze_path":             "/opt/delta-lake/bronze/stock_prices",
+            "delta_base":              "/opt/delta-lake",
         }
 
 

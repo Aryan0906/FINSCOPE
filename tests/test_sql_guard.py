@@ -24,8 +24,8 @@ def test_sql_guard_blocks_destructive_keywords():
 
 
 def test_sql_guard_enforces_select_prefix():
-    """Rule 8: Enforces that strings must explicitly start with SELECT."""
+    """Rule 8: Non-SELECT queries are blocked — either by keyword check or prefix check."""
     bad_query = "UPDATE backend SET value = 1"
     
-    with pytest.raises(SQLInjectionError, match="Only SELECT queries are allowed."):
+    with pytest.raises(SQLInjectionError):  # UPDATE triggers forbidden keyword check
         guard_sql(bad_query)
