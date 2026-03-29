@@ -169,9 +169,17 @@ class HFClient:
     def query(self, model: str, payload: dict) -> Optional[dict | list]:
         """Legacy payload poster for RAG"""
         _budget_check()
-        client = _get_client()
-        result_bytes = _execute_with_retry(client.post, json=payload, model=model)
+        def _call():
+            import requests
+            url = f"https://api-inference.huggingface.co/models/{model}"
+            h = {"Authorization": f"Bearer {settings.hf_api_token}"}
+            r = requests.post(url, headers=h, json=payload)
+            if r.status_code == 503:
+                raise Exception("503 Service Unavailable")
+            r.raise_for_status()
+            return r.content
         try:
+            result_bytes = _execute_with_retry(_call)
             return json.loads(result_bytes.decode('utf-8'))
         except BaseException:
             return None
@@ -247,7 +255,14 @@ def get_sentiment(text: str) -> Optional[float]:
     client = _get_client()
 
     def _call():
-        return client.post(json={"inputs": text[:512]}, model=settings.hf_sentiment_model)
+        import requests
+        url = f"https://api-inference.huggingface.co/models/{settings.hf_sentiment_model}"
+        h = {"Authorization": f"Bearer {settings.hf_api_token}"}
+        r = requests.post(url, headers=h, json={"inputs": text[:512]})
+        if r.status_code == 503:
+            raise Exception("503 Service Unavailable")
+        r.raise_for_status()
+        return r.content
 
     try:
         result_bytes = _execute_with_retry(_call)

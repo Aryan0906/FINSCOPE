@@ -31,98 +31,59 @@ def get_nse_prices(
     retries: int = 3,
 ) -> pd.DataFrame:
     """
-    Fetch OHLCV data from NSE via jugaad-data.
-
-    Args:
-        symbol: NSE symbol (with or without .NS suffix)
-        start: Start date (inclusive)
-        end: End date (inclusive)
-        retries: Number of retry attempts (default 3)
-
-    Returns:
-        DataFrame with columns: Date, Open, High, Low, Close, Adj Close, Volume
-        Returns empty DataFrame on total failure — never raises.
+    Fetch OHLCV data via yfinance (fallback due to API breakage in jugaad-data).
     """
-    from jugaad_data.nse import stock_df
+    try:
+        import yfinance as yf
+    except ImportError:
+        logger.error("yfinance not installed")
+        return pd.DataFrame()
 
-    # Strip .NS suffix and uppercase
     symbol_clean = symbol.replace(".NS", "").upper()
-    logger.info("Fetching NSE prices for %s [%s → %s]", symbol_clean, start, end)
+    yf_symbol = symbol_clean + ".NS"
+    logger.info("Fetching yfinance prices for %s [%s → %s]", yf_symbol, start, end)
 
+    from datetime import timedelta
     for attempt in range(1, retries + 1):
         try:
-            df = stock_df(
-                symbol=symbol_clean,
-                from_date=start,
-                to_date=end,
-                series="EQ",
-            )
+            df = yf.download(yf_symbol, period="2y", progress=False)
 
             if df is None or df.empty:
-                logger.warning("No data returned for %s (attempt %d)", symbol_clean, attempt)
-                sleep_time = 2 ** attempt  # 2s, 4s, 8s
-                time.sleep(sleep_time)
+                logger.warning("No data returned for %s (attempt %d)", yf_symbol, attempt)
+                import time
+                time.sleep(2 ** attempt)
                 continue
 
-            # Rename columns from jugaad-data format to standard OHLCV
-            # jugaad-data stock_df returns uppercase columns: DATE, OPEN, HIGH, etc.
-            rename_map = {
-                "DATE": "Date",
-                "OPEN": "Open",
-                "HIGH": "High",
-                "LOW": "Low",
-                "CLOSE": "Close",
-                "VOLUME": "Volume",
-                "LTP": "Adj Close",  # Last Traded Price as Adj Close
-            }
+            df = df.reset_index()
+            if hasattr(pd, "MultiIndex") and isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+
+            rename_map = {"Datetime": "Date", "index": "Date"}
             df = df.rename(columns=rename_map)
 
-            # If Adj Close not present after rename, copy Close
-            if "Adj Close" not in df.columns and "Close" in df.columns:
-                df["Adj Close"] = df["Close"]
-
-            # Sort ascending by Date
             if "Date" in df.columns:
-                df = df.sort_values("Date", ascending=True).reset_index(drop=True)
+                df["Date"] = pd.to_datetime(df["Date"]).dt.date
 
-            # Cast all price columns to numeric
-            price_cols = ["Open", "High", "Low", "Close", "Adj Close"]
-            for col in price_cols:
-                if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors="coerce")
-
-            # Cast Volume: fillna(0) then int
-            if "Volume" in df.columns:
-                df["Volume"] = pd.to_numeric(df["Volume"], errors="coerce").fillna(0).astype(int)
-
-            # Keep only required columns
             required = ["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"]
+            for col in required:
+                if col not in df.columns and col == "Adj Close" and "Close" in df.columns:
+                    df["Adj Close"] = df["Close"]
+
             available = [c for c in required if c in df.columns]
             df = df[available]
 
-            # Log success: symbol, row count, latest close price
-            latest_close = df["Close"].iloc[-1] if not df.empty and "Close" in df.columns else 0.0
-            logger.info(
-                "✓ %s: %d rows fetched (latest close: ₹%.2f)",
-                symbol_clean, len(df), latest_close
-            )
+            latest_close = float(df["Close"].iloc[-1]) if not df.empty and "Close" in df.columns else 0.0
+            logger.info("✓ %s: %d rows fetched (latest close: ₹%.2f)", symbol_clean, len(df), latest_close)
             return df
 
         except Exception as exc:
-            logger.warning(
-                "Attempt %d/%d failed for %s: %s",
-                attempt, retries, symbol_clean, exc
-            )
+            logger.warning("Attempt %d/%d failed for %s: %s", attempt, retries, yf_symbol, exc)
+            import time
             if attempt < retries:
-                sleep_time = 2 ** attempt  # 2s, 4s, 8s
-                time.sleep(sleep_time)
+                time.sleep(2 ** attempt)
             else:
-                logger.error(
-                    "All %d attempts failed for %s — returning empty DataFrame",
-                    retries, symbol_clean
-                )
+                logger.error("All %d attempts failed for %s", retries, yf_symbol)
 
-    # Return empty DataFrame on total failure — never raise
     return pd.DataFrame()
 
 

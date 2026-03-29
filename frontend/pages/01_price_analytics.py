@@ -37,7 +37,7 @@ if not tickers:
 selected = st.sidebar.selectbox("Select Symbol", tickers)
 lookback = st.sidebar.slider("History (days)", min_value=30, max_value=365, value=90, step=30)
 
-symbol_clean = selected.replace(".NS", "").upper() if selected else ""
+symbol_clean = selected
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Gold summary — metrics panel (PySpark-computed)
@@ -88,7 +88,7 @@ price_df = fetch_data(f"""
         close_price, volume, sma_20, sma_50, rsi_14,
         daily_return, is_outlier
     FROM silver.prices
-    WHERE symbol = '{symbol_clean}'
+    WHERE symbol = '{symbol_clean.replace(".NS", "")}'
       AND trade_date >= CURRENT_DATE - INTERVAL '{lookback} days'
     ORDER BY trade_date ASC
 """)
