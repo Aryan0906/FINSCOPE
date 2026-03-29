@@ -1,100 +1,103 @@
-# Production NSE Stock Market Pipeline
+# FinScope: Production NSE Stock Market Pipeline
 
-A production-ready data pipeline and ML layer capturing NSE stock data, analyzing PDF earnings statements, and embedding daily news for a locally-served RAG application.
+A professional-grade data engineering project featuring a **Medallion Architecture** (Bronze/Silver/Gold) on a Big Data stack. It handles real-time ingestion from NSE, performs distributed technical analysis using PySpark, and maintains a PostgreSQL warehouse for rapid dashboarding.
 
-## Stack Architecture
+## 🏗️ Architecture (Medallion Flow)
 
 ```mermaid
 flowchart TD
     %% Data Sources
     NSE[(NSE India API)]
     RSS[(Yahoo RSS)]
-    PDF[(Earnings PDFs)]
-
+    
     %% Orchestration
-    Airflow[Apache Airflow DAG]
-
-    %% Ingestion Layer
-    subgraph Bronze [Raw / Bronze Layer]
-        Ex[extract.py]
-        News[news_ingest.py]
-        PDFEx[pdf_extract.py\n+ OCR Fallback]
+    Airflow[Apache Airflow 2.10]
+    
+    %% Ingestion / Bronze
+    subgraph Bronze [Bronze Layer: Raw]
+        KP[Kafka Producer]
+        KC[Kafka Consumer]
+        DL_B[(Delta Lake\nBronze)]
     end
 
-    %% Transformation Layer
-    subgraph Silver [Clean / Silver Layer]
-        Tx[transform.py\nPydantic Validation]
-        Emb[embeddings.py\nMiniLM]
+    %% Transformation / Silver
+    subgraph Silver [Silver Layer: Enriched]
+        SparkTx[PySpark Jobs\napplyInPandas]
+        DL_S[(Delta Lake\nSilver)]
     end
 
-    %% Storage Layer
-    subgraph Storage [Databases]
-        PG[(PostgreSQL 15)]
-        VDB[(ChromaDB\nPersistent)]
-    end
-
-    %% Gold & ML Layer
-    subgraph Gold [Gold Layer & ML]
-        Ld[load.py\nSCD Type 2]
-        Sum[summarise.py\nBART via HF]
+    %% Warehouse / Gold
+    subgraph Gold [Gold Layer: Summary]
+        SparkGold[Spark JDBC Job\nTruncate-Overwrite]
+        PG[(PostgreSQL 15\nWashing)]
     end
 
     %% Frontend UI
-    UI[[Streamlit App]]
-    RAG[rag_query.py\nMistral-7B]
+    UI[[Streamlit Dashboard]]
 
     %% Edges
-    NSE --> Ex
-    RSS --> News
-    PDF --> PDFEx
-
-    Ex --> Tx
-    Tx --> Ld
-    Ld --> PG
-
-    News --> Emb
-    Emb --> VDB
-    VDB <--> RAG
-
-    PDFEx --> Sum
-    Sum --> PG
-
-    PG --> UI
-    RAG --> UI
+    NSE --> KP
+    KP --> KC
+    KC --> DL_B
     
-    Airflow -.- Bronze
-    Airflow -.- Silver
-    Airflow -.- Gold
+    DL_B --> SparkTx
+    SparkTx --> DL_S
+    
+    DL_S --> SparkGold
+    SparkGold --> PG
+    
+    PG --> UI
+    
+    Airflow -.- KP
+    Airflow -.- SparkTx
+    Airflow -.- SparkGold
 ```
 
-## The 8 Hardened Production Rules Evaluated
+## 🛠️ Technology Stack
 
-1. **HF API Budget:** Hard-capped at 80 calls/day across embeddings/summaries, managed transactionally in Postgres (`hf_api_budget`).
-2. **ChromaDB Persistence:** Runs explicitly as a distinct `chromadb_data` Docker volume. Ephemeral clients strictly rejected.
-3. **OCR Fallback Guard:** `pdf_extract.py` checks parsing text density (`>= 200` chars); falls back to `pytesseract` automatically, raising safe errors upon total unreadability.
-4. **RAG Hallucination Guard:** Embeddings enforce a threshold mapping (`cosine similarity >= 0.4`). Empty/unrelated context hard-returns *"Insufficient Data"* over wild guessing, and always links back to specific hashed RSS URLs.
-5. **Idempotent DAG Dependencies:** Explicit chains ensure `db_init` spins up cleanly before ANY table dependencies, and ML summary jobs cannot run until Gold dimension loads complete successfully.
-6. **News Deduplication:** Feed ingestion strictly hashes source URLs via SHA256 mapping. Postgres unique constraints handle `ON CONFLICT DO NOTHING`.
-7. **Model Metadata Guard:** Pipeline checks `pipeline_metadata` dimensions and model names at startup to block rogue local model dimension swaps into ChromaDB.
-8. **SQL Injection Guard:** Streamlit UI utilizes a distinct scoped `readonly_user`. Internal ML mapping queries use Regex filtering to drop `DELETE`/`DROP` statements and safely inject `LIMIT 1000`.
+- **Data Lake:** [Delta Lake](https://delta.io/) (Acids transactions on Parquet)
+- **Distributed Computing:** [Apache Spark 4.0.1](https://spark.apache.org/) (Scala 2.13 runtime)
+- **Streaming:** [Apache Kafka](https://kafka.apache.org/) (Real-time message brokerage)
+- **Orchestration:** [Apache Airflow](https://airflow.apache.org/)
+- **Database:** [PostgreSQL 15](https://www.postgresql.org/) (Gold Layer / Service Storage)
+- **Python Stack:** PySpark, Pandas, Pydantic, Streamlit
 
-## Quickstart Development
+## 💎 Sprint 3 Achievements: Distributed Analytics
 
+- **Distributed Indicators:** Implemented RSI (Relative Strength Index) and SMA (Simple Moving Averages) calculations using Spark's `applyInPandas` for vectorized grouped processing.
+- **Idempotent Writes:** Custom JDBC connector logic utilizing `truncate-overwrite` ensures exactly-once semantics into the Gold PostgreSQL layer.
+- **Medallion Integrity:** 130+ test cases covering schema enforcement, Delta transactionality, and pipeline idempotency.
+
+## 🚀 Quickstart & Verification
+
+### 1. Environment Setup
 ```bash
-# 1. Spin up dependencies
+# Spin up the full stack (Kafka, Spark, Postgres, Airflow)
 docker-compose up -d
 
-# 2. Setup Virtual Environment
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-
-# 3. Create a .env file (see settings.py for variables)
-# POSTGRES_USER, POSTGRES_PASSWORD, HF_API_TOKEN, etc.
-
-# 4. Initialize Database
-python -m backend.pipeline.db_init
-
-# 5. Run the Streamlit UI
-streamlit run frontend/app.py
+# Initialize schemas
+docker exec finscope_airflow_scheduler python -m backend.pipeline.db_init
 ```
+
+### 2. Verify the Pipeline (Sprint 3)
+Run the Gold Summary job manually to verify Delta -> Postgres connectivity:
+```bash
+docker exec -e POSTGRES_PASSWORD=your_password_here finscope_spark_master bash -c \
+  "mkdir -p /tmp/ivy2 && /opt/spark/bin/spark-submit \
+  --conf spark.jars.ivy=/tmp/ivy2 \
+  --packages io.delta:delta-spark_2.13:4.0.0,org.postgresql:postgresql:42.6.0 \
+  /opt/spark/backend/spark_jobs/gold_summary_job.py"
+```
+
+### 3. Check Gold Data
+```bash
+docker exec finscope_postgres psql -U finscope_admin -d finscope -c \
+  "SELECT symbol, as_of_date, close_price, rsi_14 FROM gold.stock_summary LIMIT 5;"
+```
+
+## 🔒 Production Guards
+
+1. **Schema Enforcement:** Delta Lake strictly rejects rows not matching the Pydantic-validated Silver schema.
+2. **Distributed Checkpointing:** Kafka consumers maintain offsets to ensure no data loss during Spark master restarts.
+3. **JDBC Batching:** Spark JDBC writes are batched (1000 rows/batch) to maintain high throughput into PostgreSQL without locking the table.
+4. **Idempotent DAGs:** Airflow tasks are atomic; re-running any task yields the same state without duplication.
