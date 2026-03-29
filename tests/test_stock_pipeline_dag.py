@@ -212,6 +212,13 @@ _python_op = _make_mod("airflow.operators.python")
 _python_op.PythonOperator = _Task  # type: ignore[attr-defined]
 sys.modules.setdefault("airflow.operators.python", _python_op)
 
+_bash_op = _make_mod("airflow.operators.bash")
+_bash_op.BashOperator = _Task  # type: ignore[attr-defined]
+sys.modules.setdefault("airflow.operators.bash", _bash_op)
+
+_operators = _make_mod("airflow.operators")
+sys.modules.setdefault("airflow.operators", _operators)
+
 _utils_dates = _make_mod("airflow.utils.dates")
 _utils_dates.days_ago = lambda n: datetime.now(timezone.utc) - timedelta(days=n)  # type: ignore[attr-defined]
 sys.modules.setdefault("airflow.utils.dates", _utils_dates)
@@ -311,7 +318,9 @@ EXPECTED_TASK_IDS: list[str] = [
     "earnings_ingest",
     "transform_prices",
     "transform_news",
+    "spark_silver_prices",
     "load_gold",
+    "spark_gold_summary",
     "create_views",
     "validate_schema",
 ]
@@ -321,11 +330,14 @@ EXPECTED_EDGES: list[tuple[str, str]] = [
     ("db_init", "news_ingest"),
     ("extract_prices", "transform_prices"),
     ("extract_prices", "earnings_ingest"),
+    ("extract_prices", "spark_silver_prices"),
     ("news_ingest", "transform_news"),
     ("transform_prices", "load_gold"),
     ("earnings_ingest", "load_gold"),
     ("transform_news", "load_gold"),
+    ("spark_silver_prices", "spark_gold_summary"),
     ("load_gold", "create_views"),
+    ("spark_gold_summary", "create_views"),
     ("create_views", "validate_schema"),
 ]
 
@@ -372,7 +384,7 @@ class TestDagMetadata:
 
 
 class TestTaskCount:
-    def test_exactly_nine_tasks(self):
+    def test_exactly_eleven_tasks(self):
         actual   = sorted(t.task_id for t in _dag().tasks)
         expected = sorted(EXPECTED_TASK_IDS)
         assert actual == expected, f"Expected {expected}, got {actual}"
@@ -384,7 +396,9 @@ class TestTaskIds:
     def test_news_ingest(self):      assert "news_ingest" in _dag().task_ids
     def test_transform_prices(self): assert "transform_prices" in _dag().task_ids
     def test_transform_news(self):   assert "transform_news" in _dag().task_ids
+    def test_spark_silver_prices(self): assert "spark_silver_prices" in _dag().task_ids
     def test_load_gold(self):        assert "load_gold" in _dag().task_ids
+    def test_spark_gold_summary(self): assert "spark_gold_summary" in _dag().task_ids
     def test_create_views(self):     assert "create_views" in _dag().task_ids
     def test_validate_schema(self):  assert "validate_schema" in _dag().task_ids
 
@@ -411,7 +425,7 @@ class TestDependencyGraph:
         assert _upstream("extract_prices") == {"db_init"}
 
     def test_extract_prices_downstream(self):
-        assert _downstream("extract_prices") == {"transform_prices", "earnings_ingest"}
+        assert _downstream("extract_prices") == {"transform_prices", "earnings_ingest", "spark_silver_prices"}
 
     def test_news_ingest_upstream(self):
         assert _upstream("news_ingest") == {"db_init"}
@@ -438,7 +452,7 @@ class TestDependencyGraph:
         assert _downstream("load_gold") == {"create_views"}
 
     def test_create_views_upstream(self):
-        assert _upstream("create_views") == {"load_gold"}
+        assert _upstream("create_views") == {"load_gold", "spark_gold_summary"}
 
     def test_create_views_downstream(self):
         assert _downstream("create_views") == {"validate_schema"}

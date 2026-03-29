@@ -90,3 +90,7 @@ node_modules/
 
 # --- Local documentation -------------------------------------
 REALTIME_SETUP.md
+
+# --- Test artifacts ------------------------------------------
+tests/dag_test_output.txt
+tests/output_*.txt

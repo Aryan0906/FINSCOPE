@@ -1,0 +1,535 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                            [100%]
+================================== FAILURES ===================================
+_________________________ TestDagMetadata.test_dag_id _________________________
+tests\test_stock_pipeline_dag.py:356: in test_dag_id
+    assert _dag().dag_id == "stock_pipeline"
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:334: in _dag
+    _ensure_dag_loaded()
+tests\test_stock_pipeline_dag.py:300: in _ensure_dag_loaded
+    _spec.loader.exec_module(dag_module)  # type: ignore[union-attr]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap_external>:759: in exec_module
+    ???
+<frozen importlib._bootstrap>:491: in _call_with_frames_removed
+    ???
+backend\dags\stock_pipeline_dag.py:55: in <module>
+    from airflow.operators.bash import BashOperator  # type: ignore[import-not-found]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'airflow.operators'; 'airflow' is not a package
+________________________ TestDagMetadata.test_schedule ________________________
+tests\test_stock_pipeline_dag.py:359: in test_schedule
+    assert _dag().schedule_interval == "30 13 * * 1-5"
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+____________________ TestDagMetadata.test_catchup_disabled ____________________
+tests\test_stock_pipeline_dag.py:362: in test_catchup_disabled
+    assert _dag().catchup is False
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+____________________ TestDagMetadata.test_max_active_runs _____________________
+tests\test_stock_pipeline_dag.py:365: in test_max_active_runs
+    assert _dag().max_active_runs == 1
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________________ TestDagMetadata.test_tags_sprint4 ______________________
+tests\test_stock_pipeline_dag.py:368: in test_tags_sprint4
+    assert "sprint4" in _dag().tags
+                        ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+________________________ TestDagMetadata.test_tags_nse ________________________
+tests\test_stock_pipeline_dag.py:371: in test_tags_nse
+    assert "nse" in _dag().tags
+                    ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+____________________ TestTaskCount.test_exactly_nine_tasks ____________________
+tests\test_stock_pipeline_dag.py:376: in test_exactly_nine_tasks
+    actual   = sorted(t.task_id for t in _dag().tasks)
+                                         ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+__________________________ TestTaskIds.test_db_init ___________________________
+tests\test_stock_pipeline_dag.py:382: in test_db_init
+    def test_db_init(self):          assert "db_init" in _dag().task_ids
+                                                         ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_______________________ TestTaskIds.test_extract_prices _______________________
+tests\test_stock_pipeline_dag.py:383: in test_extract_prices
+    def test_extract_prices(self):   assert "extract_prices" in _dag().task_ids
+                                                                ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+________________________ TestTaskIds.test_news_ingest _________________________
+tests\test_stock_pipeline_dag.py:384: in test_news_ingest
+    def test_news_ingest(self):      assert "news_ingest" in _dag().task_ids
+                                                             ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________________ TestTaskIds.test_transform_prices ______________________
+tests\test_stock_pipeline_dag.py:385: in test_transform_prices
+    def test_transform_prices(self): assert "transform_prices" in _dag().task_ids
+                                                                  ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_______________________ TestTaskIds.test_transform_news _______________________
+tests\test_stock_pipeline_dag.py:386: in test_transform_news
+    def test_transform_news(self):   assert "transform_news" in _dag().task_ids
+                                                                ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_________________________ TestTaskIds.test_load_gold __________________________
+tests\test_stock_pipeline_dag.py:387: in test_load_gold
+    def test_load_gold(self):        assert "load_gold" in _dag().task_ids
+                                                           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+________________________ TestTaskIds.test_create_views ________________________
+tests\test_stock_pipeline_dag.py:388: in test_create_views
+    def test_create_views(self):     assert "create_views" in _dag().task_ids
+                                                              ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________________ TestTaskIds.test_validate_schema _______________________
+tests\test_stock_pipeline_dag.py:389: in test_validate_schema
+    def test_validate_schema(self):  assert "validate_schema" in _dag().task_ids
+                                                                 ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_________________ TestDependencyGraph.test_all_expected_edges _________________
+tests\test_stock_pipeline_dag.py:402: in test_all_expected_edges
+    assert down in _downstream(up), f"Missing edge: {up} >> {down}"
+                   ^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+________________ TestDependencyGraph.test_db_init_no_upstream _________________
+tests\test_stock_pipeline_dag.py:405: in test_db_init_no_upstream
+    assert _upstream("db_init") == set()
+           ^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+___________________ TestDependencyGraph.test_db_init_fanout ___________________
+tests\test_stock_pipeline_dag.py:408: in test_db_init_fanout
+    assert _downstream("db_init") == {"extract_prices", "news_ingest"}
+           ^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________ TestDependencyGraph.test_extract_prices_upstream _______________
+tests\test_stock_pipeline_dag.py:411: in test_extract_prices_upstream
+    assert _upstream("extract_prices") == {"db_init"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_____________ TestDependencyGraph.test_extract_prices_downstream ______________
+tests\test_stock_pipeline_dag.py:414: in test_extract_prices_downstream
+    assert _downstream("extract_prices") == {"transform_prices", "earnings_ingest"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+________________ TestDependencyGraph.test_news_ingest_upstream ________________
+tests\test_stock_pipeline_dag.py:417: in test_news_ingest_upstream
+    assert _upstream("news_ingest") == {"db_init"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_______________ TestDependencyGraph.test_news_ingest_downstream _______________
+tests\test_stock_pipeline_dag.py:420: in test_news_ingest_downstream
+    assert _downstream("news_ingest") == {"transform_news"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_____________ TestDependencyGraph.test_transform_prices_upstream ______________
+tests\test_stock_pipeline_dag.py:423: in test_transform_prices_upstream
+    assert _upstream("transform_prices") == {"extract_prices"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+____________ TestDependencyGraph.test_transform_prices_downstream _____________
+tests\test_stock_pipeline_dag.py:426: in test_transform_prices_downstream
+    assert _downstream("transform_prices") == {"load_gold"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________ TestDependencyGraph.test_transform_news_upstream _______________
+tests\test_stock_pipeline_dag.py:429: in test_transform_news_upstream
+    assert _upstream("transform_news") == {"news_ingest"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_____________ TestDependencyGraph.test_transform_news_downstream ______________
+tests\test_stock_pipeline_dag.py:432: in test_transform_news_downstream
+    assert _downstream("transform_news") == {"load_gold"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+__________________ TestDependencyGraph.test_load_gold_fanin ___________________
+tests\test_stock_pipeline_dag.py:435: in test_load_gold_fanin
+    assert _upstream("load_gold") == {"transform_prices", "transform_news", "earnings_ingest"}
+           ^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+________________ TestDependencyGraph.test_load_gold_downstream ________________
+tests\test_stock_pipeline_dag.py:438: in test_load_gold_downstream
+    assert _downstream("load_gold") == {"create_views"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_______________ TestDependencyGraph.test_create_views_upstream ________________
+tests\test_stock_pipeline_dag.py:441: in test_create_views_upstream
+    assert _upstream("create_views") == {"load_gold"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________ TestDependencyGraph.test_create_views_downstream _______________
+tests\test_stock_pipeline_dag.py:444: in test_create_views_downstream
+    assert _downstream("create_views") == {"validate_schema"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________ TestDependencyGraph.test_validate_schema_upstream ______________
+tests\test_stock_pipeline_dag.py:447: in test_validate_schema_upstream
+    assert _upstream("validate_schema") == {"create_views"}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:343: in _upstream
+    return {t.task_id for t in _task(task_id).upstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+______________ TestDependencyGraph.test_validate_schema_is_leaf _______________
+tests\test_stock_pipeline_dag.py:450: in test_validate_schema_is_leaf
+    assert _downstream("validate_schema") == set()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_____ TestDependencyGraph.test_prices_branch_isolated_from_news_transform _____
+tests\test_stock_pipeline_dag.py:453: in test_prices_branch_isolated_from_news_transform
+    assert "transform_news" not in _downstream("extract_prices")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_____ TestDependencyGraph.test_news_branch_isolated_from_prices_transform _____
+tests\test_stock_pipeline_dag.py:456: in test_news_branch_isolated_from_prices_transform
+    assert "transform_prices" not in _downstream("news_ingest")
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:347: in _downstream
+    return {t.task_id for t in _task(task_id).downstream_list}
+                               ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+___________ TestTaskOperatorType.test_all_tasks_are_python_operator ___________
+tests\test_stock_pipeline_dag.py:464: in test_all_tasks_are_python_operator
+    t = _task(task_id)
+        ^^^^^^^^^^^^^^
+tests\test_stock_pipeline_dag.py:339: in _task
+    return _dag().get_task(task_id)
+           ^^^^^^
+tests\test_stock_pipeline_dag.py:335: in _dag
+    return dag_module.dag  # type: ignore[return-value]
+           ^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'dag'. Did you mean: 'DAG'?
+_________________________ TestDefaultArgs.test_owner __________________________
+tests\test_stock_pipeline_dag.py:472: in test_owner
+    assert dag_module.DEFAULT_ARGS["owner"] == "nse-data-team"
+           ^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'DEFAULT_ARGS'
+________________________ TestDefaultArgs.test_retries _________________________
+tests\test_stock_pipeline_dag.py:475: in test_retries
+    assert dag_module.DEFAULT_ARGS["retries"] == 2
+           ^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'DEFAULT_ARGS'
+____________________ TestDefaultArgs.test_email_on_failure ____________________
+tests\test_stock_pipeline_dag.py:478: in test_email_on_failure
+    assert dag_module.DEFAULT_ARGS["email_on_failure"] is False
+           ^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'DEFAULT_ARGS'
+____________________ TestDefaultArgs.test_depends_on_past _____________________
+tests\test_stock_pipeline_dag.py:481: in test_depends_on_past
+    assert dag_module.DEFAULT_ARGS["depends_on_past"] is False
+           ^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'backend.dags.stock_pipeline_dag' has no attribute 'DEFAULT_ARGS'
+___________________ TestTaskCallables.test_db_init_callable ___________________
+tests\test_stock_pipeline_dag.py:489: in test_db_init_callable
+    with patch.object(dag_module, "db_init") as mock_db_init:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'backend.dags.stock_pipeline_dag' from 'D:\\FINSCOPE\\backend\\dags\\stock_pipeline_dag.py'> does not have the attribute 'db_init'
+_______________ TestTaskCallables.test_extract_prices_callable ________________
+tests\test_stock_pipeline_dag.py:496: in test_extract_prices_callable
+    with patch.object(dag_module, "extract") as mock_extract:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'backend.dags.stock_pipeline_dag' from 'D:\\FINSCOPE\\backend\\dags\\stock_pipeline_dag.py'> does not have the attribute 'extract'
+_________________ TestTaskCallables.test_news_ingest_callable _________________
+tests\test_stock_pipeline_dag.py:504: in test_news_ingest_callable
+    with patch.object(dag_module, "news_ingest") as mock_news:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'backend.dags.stock_pipeline_dag' from 'D:\\FINSCOPE\\backend\\dags\\stock_pipeline_dag.py'> does not have the attribute 'news_ingest'
+____________ TestTaskCallables.test_transform_prices_returns_dict _____________
+tests\test_stock_pipeline_dag.py:513: in test_transform_prices_returns_dict
+    patch.object(dag_module, "transform_prices", return_value=10) as mp,
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'backend.dags.stock_pipeline_dag' from 'D:\\FINSCOPE\\backend\\dags\\stock_pipeline_dag.py'> does not have the attribute 'transform_prices'
+______ TestTaskCallables.test_transform_news_accumulates_across_symbols _______
+tests\test_stock_pipeline_dag.py:523: in test_transform_news_accumulates_across_symbols
+    with patch.object(dag_module, "_transform_news_fn", return_value=7):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'backend.dags.stock_pipeline_dag' from 'D:\\FINSCOPE\\backend\\dags\\stock_pipeline_dag.py'> does not have the attribute '_transform_news_fn'
+__________________ TestTaskCallables.test_load_gold_callable __________________
+tests\test_stock_pipeline_dag.py:529: in test_load_gold_callable
+    with patch.object(dag_module, "load") as mock_load:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\unittest\mock.py:1473: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'backend.dags.stock_pipeline_dag' from 'D:\\FINSCOPE\\backend\\dags\\stock_pipeline_dag.py'> does not have the attribute 'load'
+=========================== short test summary info ===========================
+FAILED tests/test_stock_pipeline_dag.py::TestDagMetadata::test_dag_id - Modul...
+FAILED tests/test_stock_pipeline_dag.py::TestDagMetadata::test_schedule - Att...
+FAILED tests/test_stock_pipeline_dag.py::TestDagMetadata::test_catchup_disabled
+FAILED tests/test_stock_pipeline_dag.py::TestDagMetadata::test_max_active_runs
+FAILED tests/test_stock_pipeline_dag.py::TestDagMetadata::test_tags_sprint4
+FAILED tests/test_stock_pipeline_dag.py::TestDagMetadata::test_tags_nse - Att...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCount::test_exactly_nine_tasks
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_db_init - Attribut...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_extract_prices - A...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_news_ingest - Attr...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_transform_prices
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_transform_news - A...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_load_gold - Attrib...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_create_views - Att...
+FAILED tests/test_stock_pipeline_dag.py::TestTaskIds::test_validate_schema - ...
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_all_expected_edges
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_db_init_no_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_db_init_fanout
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_extract_prices_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_extract_prices_downstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_news_ingest_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_news_ingest_downstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_transform_prices_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_transform_prices_downstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_transform_news_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_transform_news_downstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_load_gold_fanin
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_load_gold_downstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_create_views_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_create_views_downstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_validate_schema_upstream
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_validate_schema_is_leaf
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_prices_branch_isolated_from_news_transform
+FAILED tests/test_stock_pipeline_dag.py::TestDependencyGraph::test_news_branch_isolated_from_prices_transform
+FAILED tests/test_stock_pipeline_dag.py::TestTaskOperatorType::test_all_tasks_are_python_operator
+FAILED tests/test_stock_pipeline_dag.py::TestDefaultArgs::test_owner - Attrib...
+FAILED tests/test_stock_pipeline_dag.py::TestDefaultArgs::test_retries - Attr...
+FAILED tests/test_stock_pipeline_dag.py::TestDefaultArgs::test_email_on_failure
+FAILED tests/test_stock_pipeline_dag.py::TestDefaultArgs::test_depends_on_past
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCallables::test_db_init_callable
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCallables::test_extract_prices_callable
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCallables::test_news_ingest_callable
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCallables::test_transform_prices_returns_dict
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCallables::test_transform_news_accumulates_across_symbols
+FAILED tests/test_stock_pipeline_dag.py::TestTaskCallables::test_load_gold_callable
+45 failed in 1.23s

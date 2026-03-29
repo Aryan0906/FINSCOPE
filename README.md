@@ -68,6 +68,13 @@ flowchart TD
 - **Idempotent Writes:** Custom JDBC connector logic utilizing `truncate-overwrite` ensures exactly-once semantics into the Gold PostgreSQL layer.
 - **Medallion Integrity:** 130+ test cases covering schema enforcement, Delta transactionality, and pipeline idempotency.
 
+## 💎 Sprint 4 Achievements: Orchestration & Dashboard
+
+- **11-task DAG**: Added `spark_silver_prices` and `spark_gold_summary` BashOperator tasks wired in parallel with Python transforms
+- **Airflow Variables**: Secrets managed via Airflow Variable store (not hardcoded)
+- **Gold-layer dashboard**: `01_price_analytics.py` reads metrics from `gold.stock_summary` (PySpark-computed) and breadth from `gold.v_market_pulse`
+- **134 unit tests passing** (0 failures, 0 errors)
+
 ## 🚀 Quickstart & Verification
 
 ### 1. Environment Setup

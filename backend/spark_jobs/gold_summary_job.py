@@ -10,8 +10,7 @@ staging table + MERGE SQL executed via psycopg2).
 
 Usage (standalone):
     spark-submit \
-      --conf spark.jars.ivy=/tmp/ivy2 \
-      --packages io.delta:delta-spark_2.13:4.0.0,org.postgresql:postgresql:42.6.0 \
+      --packages io.delta:delta-spark_2.12:3.0.0,org.postgresql:postgresql:42.6.0 \
       backend/spark_jobs/gold_summary_job.py
 """
 
@@ -99,32 +98,64 @@ def build_gold_summary(spark: SparkSession, silver_path: str):
 
 def write_to_postgres(df, jdbc_url: str, user: str, password: str) -> int:
     """
-    Write gold summary directly to gold.stock_summary via JDBC truncate-overwrite.
-    Idempotent: TRUNCATE + INSERT in one Spark write (no psycopg2 needed).
+    Write gold summary to PostgreSQL staging table, then upsert into
+    gold.stock_summary via psycopg2 MERGE.
     """
-    target_table = "gold.stock_summary"
+    staging_table = "gold.stock_summary_staging"
 
-    logger.info("Writing to PostgreSQL: %s (truncate-overwrite)", target_table)
-
-    # Add updated_at before writing (F already imported at module level)
-    df_with_ts = df.withColumn("updated_at", F.current_timestamp())
-
+    logger.info("Writing to PostgreSQL staging: %s", staging_table)
     (
-        df_with_ts.write
+        df.write
         .format("jdbc")
         .option("url", jdbc_url)
-        .option("dbtable", target_table)
+        .option("dbtable", staging_table)
         .option("user", user)
         .option("password", password)
         .option("driver", "org.postgresql.Driver")
-        .option("truncate", "true")          # TRUNCATE then INSERT — no DROP/CREATE
-        .option("batchsize", "1000")
         .mode("overwrite")
         .save()
     )
 
-    count = df_with_ts.count()
-    logger.info("Gold stock_summary written: %d rows", count)
+    # Upsert from staging → gold.stock_summary via psycopg2
+    import psycopg2
+    from urllib.parse import urlparse
+
+    parsed = urlparse(jdbc_url.replace("jdbc:", ""))
+    conn = psycopg2.connect(
+        host=parsed.hostname,
+        port=parsed.port or 5432,
+        dbname=parsed.path.lstrip("/"),
+        user=user,
+        password=password,
+        connect_timeout=10,
+    )
+    conn.autocommit = True
+    with conn.cursor() as cur:
+        # Upsert from staging → gold.stock_summary
+        cur.execute("""
+            INSERT INTO gold.stock_summary (
+                symbol, as_of_date, close_price, daily_return,
+                normalised_close, sma_20, sma_50, rsi_14, updated_at
+            )
+            SELECT
+                symbol, as_of_date, close_price, daily_return,
+                normalised_close, sma_20, sma_50, rsi_14, NOW()
+            FROM gold.stock_summary_staging
+            ON CONFLICT (symbol) DO UPDATE SET
+                as_of_date       = EXCLUDED.as_of_date,
+                close_price      = EXCLUDED.close_price,
+                daily_return     = EXCLUDED.daily_return,
+                normalised_close = EXCLUDED.normalised_close,
+                sma_20           = EXCLUDED.sma_20,
+                sma_50           = EXCLUDED.sma_50,
+                rsi_14           = EXCLUDED.rsi_14,
+                updated_at       = NOW();
+        """)
+        cur.execute("DROP TABLE IF EXISTS gold.stock_summary_staging;")
+    conn.close()
+
+    count = df.count()
+    logger.info("Gold stock_summary upserted: %d rows", count)
     return count
 
 
