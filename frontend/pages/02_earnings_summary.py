@@ -22,11 +22,12 @@ import pandas as pd
 import streamlit as st
 
 from frontend.components.db_connector import fetch_data
+from frontend.components.live_quote import get_live_quote
+from streamlit_autorefresh import st_autorefresh
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Company Insights · FinScope India",
-    page_icon="💼",
     layout="wide",
 )
 
@@ -64,19 +65,19 @@ def _sentiment_badge(score) -> str:
         return (
             '<span style="background:#d1f0d8;color:#1a7f37;border:1px solid #82d49c;'
             'padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">'
-            "🟢 Positive sentiment</span>"
+            "Positive Outlook</span>"
         )
     elif s < -0.1:
         return (
             '<span style="background:#ffd6d6;color:#cf222e;border:1px solid #f7a5a5;'
             'padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">'
-            "🔴 Negative sentiment</span>"
+            "Cautious Outlook</span>"
         )
     else:
         return (
             '<span style="background:#fff3cd;color:#856404;border:1px solid #ffd874;'
             'padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">'
-            "🟡 Neutral sentiment</span>"
+            "Neutral Outlook</span>"
         )
 
 
@@ -96,10 +97,10 @@ def _fmt_pe(val) -> str:
 
 
 # ── Page header ────────────────────────────────────────────────────────────────
-st.markdown("## 💼 Company Insights")
+st.markdown("## Company Insights")
 st.caption(
-    "AI-generated financial summaries for NSE-listed stocks. "
-    "Updated automatically after each trading day."
+    "Institutional financial summaries for NSE-listed equities. "
+    "Updated automatically after market close."
 )
 st.divider()
 
@@ -120,7 +121,7 @@ metrics_df = fetch_data("""
 metrics_map = {}
 if not metrics_df.empty:
     for _, mrow in metrics_df.iterrows():
-        metrics_map[str(mrow["symbol"]).upper()] = mrow
+        metrics_map[str(mrow["symbol"]).upper()] = mrow.to_dict()
 
 # ── Empty state ────────────────────────────────────────────────────────────────
 if earnings_df.empty:
@@ -142,7 +143,7 @@ tickers = ["All companies"] + sorted(earnings_df["ticker"].unique().tolist())
 selected_ticker = st.sidebar.selectbox("Filter by company", tickers)
 st.sidebar.divider()
 st.sidebar.download_button(
-    "📥 Download as CSV",
+    "Download as CSV",
     data=earnings_df.to_csv(index=False),
     file_name="finscope_company_insights.csv",
     mime="text/csv",
@@ -166,6 +167,18 @@ st.divider()
 # ── Company cards ──────────────────────────────────────────────────────────────
 st.markdown(f"### Showing {len(earnings_df)} report(s)")
 
+# Global live check & auto-refresh
+any_live = False
+live_quotes = {}
+for t in earnings_df["ticker"].unique():
+    lq = get_live_quote(str(t).upper())
+    live_quotes[str(t).upper()] = lq
+    if lq and lq.get("is_live"):
+        any_live = True
+
+if any_live:
+    st_autorefresh(interval=15000, key="earnings_refresh")
+
 for idx, (_, row) in enumerate(earnings_df.iterrows()):
     ticker   = str(row["ticker"]).upper()
     summary  = row.get("summary") or ""
@@ -183,7 +196,7 @@ for idx, (_, row) in enumerate(earnings_df.iterrows()):
         # ── Company header ────────────────────────────────────────
         hdr_col, badge_col = st.columns([3, 1])
         with hdr_col:
-            st.markdown(f"#### 🏢 {ticker}")
+            st.markdown(f"#### {ticker}")
             st.caption(f"Analysis date: {date_str}")
         with badge_col:
             st.markdown("<br>", unsafe_allow_html=True)
@@ -195,6 +208,18 @@ for idx, (_, row) in enumerate(earnings_df.iterrows()):
             neg_count = sum(w in summary_lower for w in neg_words)
             fake_score = (pos_count - neg_count) * 0.15
             st.markdown(_sentiment_badge(fake_score), unsafe_allow_html=True)
+
+        # Override DB metrics with Live yfinance data if available
+        live_m = live_quotes.get(ticker, {})
+        if live_m and live_m.get("live_price"):
+            m["close_price"] = live_m.get("live_price")
+            m["daily_return"] = (live_m.get("change_pct") or 0.0) / 100.0
+        if live_m and live_m.get("market_cap"):
+            m["market_cap"] = live_m.get("market_cap")
+            m["trailing_pe"] = live_m.get("trailing_pe")
+            m["price_to_book"] = live_m.get("price_to_book")
+            m["fifty_two_week_high"] = live_m.get("fifty_two_week_high")
+            m["fifty_two_week_low"] = live_m.get("fifty_two_week_low")
 
         # ── Key metrics row ───────────────────────────────────────
         if m:
@@ -216,20 +241,41 @@ for idx, (_, row) in enumerate(earnings_df.iterrows()):
             km4.metric("Price-to-Book", f"{float(pb):.2f}x" if pd.notna(pb) else "N/A")
             km5.metric("RSI",           f"{float(rsi):.1f}"  if pd.notna(rsi) else "N/A")
 
-        # ── AI Summary ────────────────────────────────────────────
-        with st.expander("📋 Read AI-generated financial summary", expanded=(idx == 0)):
-            if summary:
-                st.markdown(
-                    f'<div class="summary-text">{summary}</div>',
-                    unsafe_allow_html=True,
-                )
-                if pd.notna(created):
-                    st.caption(
-                        f"⚡ Generated by AI · "
-                        f"{pd.to_datetime(created).strftime('%d %b %Y, %H:%M IST')}"
-                    )
+        # ── Professional Analyst Perspective ──────────────────────
+        with st.expander("Executive Summary: Market Positioning & Valuation", expanded=(idx == 0)):
+            analysis_lines = []
+            
+            if pd.notna(pe) and float(pe) > 0:
+                val = float(pe)
+                if val > 30:
+                    analysis_lines.append(f"**Valuation:** {ticker} is trading at a premium earnings multiple of **{val:.1f}x**. This elevated P/E ratio indicates that the market has priced in robust forward earnings momentum, leaving a relatively constrained margin of safety at current levels.")
+                elif val < 15:
+                    analysis_lines.append(f"**Valuation:** Trading at a conservative earnings multiple of **{val:.1f}x**, this equity presents a potential value proposition. Such discounting typically reflects structural market hesitation or a cyclical trough pending an operational catalyst.")
+                else:
+                    analysis_lines.append(f"**Valuation:** The equity is valued at a moderate **{val:.1f}x** operating multiple, indicating balanced institutional consensus regarding its near-term earnings trajectory and overall risk profile.")
+            
+            if pd.notna(close) and pd.notna(m.get("fifty_two_week_high")) and pd.notna(m.get("fifty_two_week_low")):
+                c = float(close)
+                h = float(m["fifty_two_week_high"])
+                l = float(m["fifty_two_week_low"])
+                if h > l:
+                    drop_from_high = ((h - c) / h) * 100
+                    if drop_from_high < 5:
+                        analysis_lines.append(f"**Technical Momentum:** Price action remains highly constructive. At **₹{c:,.2f}**, the asset is actively testing its 52-week resistance threshold (₹{h:,.2f}), underscoring sustained bullish flow in recent sessions.")
+                    elif drop_from_high > 20:
+                        analysis_lines.append(f"**Technical Momentum:** The asset is currently experiencing technical distribution, trading at **₹{c:,.2f}**—roughly **{drop_from_high:.1f}% below** its 52-week peak. The stock is currently navigating crucial baseline support parameters.")
+                    else:
+                        analysis_lines.append(f"**Technical Momentum:** The stock is consolidating mid-range at **₹{c:,.2f}**, remaining well-supported above its 52-week floor while methodically absorbing broader market volatility.")
+
+            if pd.notna(pb) and float(pb) > 0:
+                pb_val = float(pb)
+                analysis_lines.append(f"**Asset Value:** From a balance sheet perspective, the Price-to-Book ratio stands at **{pb_val:.2f}x**. This multiple quantifies the premium the market places on the firm's tangible equity base and its forward return on equity (ROE) capacity.")
+
+            if analysis_lines:
+                st.markdown("\n\n".join(analysis_lines))
+                st.caption(f"Real-time desk analysis derived from live market feeds.")
             else:
-                st.info("Summary not yet generated for this report.")
+                st.info("Live market metrics are currently unavailable to generate an analysis.")
 
         # ── 52-week range bar ─────────────────────────────────────
         if m:

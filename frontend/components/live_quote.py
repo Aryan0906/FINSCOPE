@@ -14,8 +14,8 @@ What it provides:
   - Fundamentals (marketCap, PE, P/B) which aren't stored in silver.fundamentals
   - 52-week high/low as a fallback when DB values are NULL
 
-Cached for 60 seconds (st.cache_data) to avoid hammering yfinance on every
-Streamlit rerun.
+Cached for 10 seconds (st.cache_data) to avoid hammering yfinance on every
+Streamlit rerun, while keeping the UI responsive.
 """
 
 from __future__ import annotations
@@ -49,11 +49,11 @@ def _market_open() -> bool:
     return open_t <= ist <= close_t
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=10, show_spinner=False)
 def get_live_quote(symbol: str) -> dict:
     """
     Return a dict with live/delayed price and fundamentals from yfinance.
-    Cached for 60 seconds.  Returns {} on failure (never raises).
+    Cached for 10 seconds.  Returns {} on failure (never raises).
 
     Keys returned (all optional — check with .get()):
       live_price        float  — current market price (15-min delayed)
@@ -71,10 +71,23 @@ def get_live_quote(symbol: str) -> dict:
         import yfinance as yf
         ticker_str = _yf_ticker(symbol)
         t = yf.Ticker(ticker_str)
-        info = t.info  # one network call — cached by yf internally
+        
+        # fast_info is much faster and bypasses yfinance's heavy info caching
+        fast = t.fast_info
+        try:
+            live_price = float(fast.last_price)
+        except Exception:
+            live_price = None
+            
+        try:
+            prev_close = float(fast.previous_close)
+        except Exception:
+            prev_close = None
 
-        live_price  = info.get("currentPrice") or info.get("regularMarketPrice")
-        prev_close  = info.get("previousClose") or info.get("regularMarketPreviousClose")
+        info = t.info  # one network call for fundamentals
+        
+        live_price  = live_price or info.get("currentPrice") or info.get("regularMarketPrice")
+        prev_close  = prev_close or info.get("previousClose") or info.get("regularMarketPreviousClose")
         change_pct  = None
         if live_price and prev_close and prev_close != 0:
             change_pct = (live_price - prev_close) / prev_close * 100

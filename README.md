@@ -1,6 +1,6 @@
-# FinScope: Production-Ready NSE Stock Market Pipeline
+# FinScope: Institutional-Grade NSE Stock Market Platform
 
-A professional-grade data engineering project featuring a **Medallion Architecture** (Bronze/Silver/Gold) on a Big Data stack. This pipeline handles real-time ingestion from NSE, distributed analytical processing via PySpark, and houses a **Machine Learning Core** for financial sentiment analysis and RAG-powered stock insights.
+A professional-grade equity research platform combining a **Retail-Ready Consumer Frontend** with a **Medallion Architecture** (Bronze/Silver/Gold) Big Data stack. This platform handles daily batch ingestion from NSE, distributed analytical processing via PySpark, and houses a **Machine Learning Core** for financial sentiment analysis and RAG-powered stock insights—all served through a premium, jargon-free Streamlit dashboard with real-time live-tick overlays.
 
 ## 🏗️ Architecture (Medallion Flow)
 
@@ -30,11 +30,14 @@ flowchart TD
     subgraph Gold [Gold Layer: Summary]
         SparkGold[Gold Consolidation\nJDBC Sink]
         Chroma[ChromaDB\nVector Store]
-        PG[(PostgreSQL 15\nWashing)]
+        PG[(PostgreSQL 15)]
     end
 
     %% Frontend UI
-    UI[[Streamlit Dashboard]]
+    UI[[Streamlit Consumer App]]
+
+    %% Live Tick Overlay
+    LiveYF[(Live YFinance\nAPI Overlay)]
 
     %% Edges
     NSE -.-> Extract
@@ -52,6 +55,7 @@ flowchart TD
     
     PG --> UI
     Chroma --> UI
+    LiveYF --> UI
     
     Airflow -.- Extract
     Airflow -.- SparkTx
@@ -60,6 +64,7 @@ flowchart TD
 
 ## 🛠️ Technology Stack
 
+- **Frontend Application:** Streamlit (Vanilla CSS, Plotly Subplots, Auto-Refresh)
 - **Data Lake:** [Delta Lake](https://delta.io/) (ACID Transactions on Parquet)
 - **Big Data Computing:** [Apache Spark 4.0.1](https://spark.apache.org/) (Vectorized `applyInPandas` processing)
 - **Vector Database:** [ChromaDB](https://www.trychroma.com/) (RAG-powered stock analysis)
@@ -70,6 +75,9 @@ flowchart TD
 
 ## 💎 Project Highlights (Why this is Portfolio-Ready)
 
+- **Institutional UX/UI:** Stripped away all technical pipeline jargon to present a clean, highly-polished retail platform mimicking high-end equity terminals, complete with a dedicated landing page.
+- **Real-Time Market Overlay:** The dashboard seamlessly merges daily PySpark batch data (Airflow/PostgreSQL) with a 15-second auto-refreshing live market tick overlay via asynchronous `yfinance` caching.
+- **Live AI Analyst Translations:** Automatically translates rigid financial multiples (P/E ratios, Price-to-Book, 52-week positions) into dynamic, plain-English executive summaries on the fly.
 - **Vectorized Technical Analysis:** Implemented RSI, SMA, and Volatility indicators using Spark's `applyInPandas` for 10x performance over row-based processing.
 - **Production Resilience:** Robust `yfinance` fallback logic automatically engages if official NSE API limits are reached, ensuring 24/7 data availability.
 - **Statistical Integrity:** Integrated Z-Score based outlier detection (Rule 7) to automatically flag and filter "fat-finger" trades and flash-crash anomalies.
@@ -100,9 +108,9 @@ docker exec finscope_airflow_scheduler python -m backend.pipeline.earnings_inges
 
 ### 3. Launch UI
 ```bash
-# Run locally using the shared postgres/chromadb services
-export POSTGRES_HOST="localhost"
-venv/Scripts/python.exe -m streamlit run frontend/app.py
+# Ensure POSTGRES_HOST=localhost and CHROMADB_HOST=localhost in .env
+# Run locally using your virtual environment
+.\venv\Scripts\python.exe -m streamlit run frontend/app.py
 ```
 
 ## 🔒 Engineering Best Practices

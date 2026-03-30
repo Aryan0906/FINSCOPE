@@ -222,32 +222,7 @@ for col, (num, title, desc) in zip([h1, h2, h3, h4], steps):
 
 st.divider()
 
-# ── Tech stack (collapsed — for recruiters) ────────────────────────────────────
-with st.expander("🔧 Tech stack & architecture (for recruiters / developers)"):
-    st.markdown("""
-**Data pipeline**
-- **Apache Airflow** — orchestrates all daily ETL tasks (11-task DAG)
-- **Apache Spark (PySpark)** — data cleaning, indicator computation (RSI, SMA, normalisation)
-- **Delta Lake** — medallion architecture: Bronze → Silver → Gold layers in PostgreSQL
 
-**Storage & serving**
-- **PostgreSQL** — primary store for all processed data; gold-layer views power the dashboard
-- **ChromaDB** — vector store for news article embeddings (RAG engine)
-
-**ML & NLP**
-- **HuggingFace BART** (`facebook/bart-large-cnn`) — earnings text summarisation
-- **Mistral-7B** — answer generation for the Q&A module
-- **FinBERT** — sentiment classification on financial text
-
-**Dashboard**
-- **Streamlit** — UI framework
-- **Plotly** — interactive charts
-- **Docker Compose** — local orchestration of all services
-
-**Data sources**
-- NSE India via `yfinance` (price data)
-- News articles via NewsAPI (for Q&A embedding)
-    """)
 
 # ── Disclaimer ──────────────────────────────────────────────────────────────────
 st.markdown(

@@ -122,7 +122,7 @@ def _fmt_crore(val) -> str:
 live_data = get_live_quote(symbol_clean)
 
 if live_data and live_data.get("is_live"):
-    st_autorefresh(interval=60000, key="data_refresh")
+    st_autorefresh(interval=15000, key="data_refresh")
 
 # Source: gold.stock_summary (PySpark-computed gold layer — not shown to users)
 summary_df = fetch_data(f"""
