@@ -382,8 +382,8 @@ else:
         height=680,
         template="plotly_white",
         xaxis_rangeslider_visible=False,
-        margin=dict(l=20, r=20, t=50, b=20),
-        legend=dict(orientation="h", y=1.04, x=0),
+        margin=dict(l=20, r=20, t=80, b=20),
+        legend=dict(orientation="h", y=1.10, x=0, yanchor="bottom"),
         font=dict(family="Inter, sans-serif"),
     )
     fig.update_yaxes(title_text="Price (₹)", row=1, col=1)
