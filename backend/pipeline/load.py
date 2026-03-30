@@ -78,14 +78,16 @@ SELECT
     p.sma_20,
     p.sma_50,
     p.rsi_14,
-    MAX(CASE WHEN f.metric_name = 'marketCap'       THEN f.metric_value END) AS market_cap,
-    MAX(CASE WHEN f.metric_name = 'trailingPE'      THEN f.metric_value END) AS trailing_pe,
-    MAX(CASE WHEN f.metric_name = 'priceToBook'     THEN f.metric_value END) AS price_to_book,
-    MAX(CASE WHEN f.metric_name = 'debtToEquity'    THEN f.metric_value END) AS debt_to_equity,
-    MAX(CASE WHEN f.metric_name = 'returnOnEquity'  THEN f.metric_value END) AS return_on_equity,
-    MAX(CASE WHEN f.metric_name = 'dividendYield'   THEN f.metric_value END) AS dividend_yield,
-    MAX(CASE WHEN f.metric_name = 'fiftyTwoWeekHigh' THEN f.metric_value END) AS fifty_two_week_high,
-    MAX(CASE WHEN f.metric_name = 'fiftyTwoWeekLow'  THEN f.metric_value END) AS fifty_two_week_low
+    -- silver.fundamentals stores these as camelCase yfinance keys
+    MAX(CASE WHEN f.metric_name = 'marketCap'        THEN f.metric_value END) AS market_cap,
+    MAX(CASE WHEN f.metric_name = 'trailingPE'       THEN f.metric_value END) AS trailing_pe,
+    MAX(CASE WHEN f.metric_name = 'priceToBook'      THEN f.metric_value END) AS price_to_book,
+    MAX(CASE WHEN f.metric_name = 'debtToEquity'     THEN f.metric_value END) AS debt_to_equity,
+    MAX(CASE WHEN f.metric_name = 'returnOnEquity'   THEN f.metric_value END) AS return_on_equity,
+    MAX(CASE WHEN f.metric_name = 'dividendYield'    THEN f.metric_value END) AS dividend_yield,
+    -- FIX: silver stores 52-week range as 'high52'/'low52', not 'fiftyTwoWeekHigh'/'fiftyTwoWeekLow'
+    MAX(CASE WHEN f.metric_name = 'high52'           THEN f.metric_value END) AS fifty_two_week_high,
+    MAX(CASE WHEN f.metric_name = 'low52'            THEN f.metric_value END) AS fifty_two_week_low
 FROM (
     SELECT DISTINCT ON (symbol) *
     FROM silver.prices
@@ -98,22 +100,22 @@ GROUP BY
     p.symbol, p.trade_date, p.close_price, p.daily_return,
     p.normalised_close, p.sma_20, p.sma_50, p.rsi_14
 ON CONFLICT (symbol) DO UPDATE SET
-    as_of_date         = EXCLUDED.as_of_date,
-    close_price        = EXCLUDED.close_price,
-    daily_return       = EXCLUDED.daily_return,
-    normalised_close   = EXCLUDED.normalised_close,
-    sma_20             = EXCLUDED.sma_20,
-    sma_50             = EXCLUDED.sma_50,
-    rsi_14             = EXCLUDED.rsi_14,
-    market_cap         = EXCLUDED.market_cap,
-    trailing_pe        = EXCLUDED.trailing_pe,
-    price_to_book      = EXCLUDED.price_to_book,
-    debt_to_equity     = EXCLUDED.debt_to_equity,
-    return_on_equity   = EXCLUDED.return_on_equity,
-    dividend_yield     = EXCLUDED.dividend_yield,
-    fifty_two_week_high = EXCLUDED.fifty_two_week_high,
-    fifty_two_week_low  = EXCLUDED.fifty_two_week_low,
-    updated_at         = NOW();
+    as_of_date          = EXCLUDED.as_of_date,
+    close_price         = EXCLUDED.close_price,
+    daily_return        = EXCLUDED.daily_return,
+    normalised_close    = EXCLUDED.normalised_close,
+    sma_20              = EXCLUDED.sma_20,
+    sma_50              = EXCLUDED.sma_50,
+    rsi_14              = EXCLUDED.rsi_14,
+    market_cap          = COALESCE(EXCLUDED.market_cap,          gold.stock_summary.market_cap),
+    trailing_pe         = COALESCE(EXCLUDED.trailing_pe,         gold.stock_summary.trailing_pe),
+    price_to_book       = COALESCE(EXCLUDED.price_to_book,       gold.stock_summary.price_to_book),
+    debt_to_equity      = COALESCE(EXCLUDED.debt_to_equity,      gold.stock_summary.debt_to_equity),
+    return_on_equity    = COALESCE(EXCLUDED.return_on_equity,    gold.stock_summary.return_on_equity),
+    dividend_yield      = COALESCE(EXCLUDED.dividend_yield,      gold.stock_summary.dividend_yield),
+    fifty_two_week_high = COALESCE(EXCLUDED.fifty_two_week_high, gold.stock_summary.fifty_two_week_high),
+    fifty_two_week_low  = COALESCE(EXCLUDED.fifty_two_week_low,  gold.stock_summary.fifty_two_week_low),
+    updated_at          = NOW();
 """
 
 

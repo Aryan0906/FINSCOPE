@@ -30,6 +30,8 @@ import streamlit as st
 from plotly.subplots import make_subplots
 
 from frontend.components.db_connector import fetch_data, get_tickers
+from frontend.components.live_quote import get_live_quote
+from streamlit_autorefresh import st_autorefresh
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Price Analysis · FinScope India", layout="wide", page_icon="📊")
@@ -116,7 +118,12 @@ def _fmt_crore(val) -> str:
         return "N/A"
 
 
-# ── Fetch latest snapshot ──────────────────────────────────────────────────────
+# ── Fetch latest snapshot & Live Quote ─────────────────────────────────────────
+live_data = get_live_quote(symbol_clean)
+
+if live_data and live_data.get("is_live"):
+    st_autorefresh(interval=60000, key="data_refresh")
+
 # Source: gold.stock_summary (PySpark-computed gold layer — not shown to users)
 summary_df = fetch_data(f"""
     SELECT symbol, as_of_date, close_price, daily_return,
@@ -134,11 +141,28 @@ if summary_df.empty:
     )
     st.stop()
 
-row = summary_df.iloc[0]
+row = summary_df.iloc[0].to_dict()
+
+# Override DB values with Live YFinance Data if available
+if live_data:
+    if live_data.get("live_price"):
+        row["close_price"] = live_data["live_price"]
+    if live_data.get("change_pct") is not None:
+        row["daily_return"] = live_data["change_pct"] / 100.0
+    if live_data.get("market_cap"):
+        row["market_cap"] = live_data["market_cap"]
+    if live_data.get("trailing_pe"):
+        row["trailing_pe"] = live_data["trailing_pe"]
+    if live_data.get("price_to_book"):
+        row["price_to_book"] = live_data["price_to_book"]
+    if live_data.get("fifty_two_week_high"):
+        row["fifty_two_week_high"] = live_data["fifty_two_week_high"]
+    if live_data.get("fifty_two_week_low"):
+        row["fifty_two_week_low"] = live_data["fifty_two_week_low"]
 
 # ── Page header ────────────────────────────────────────────────────────────────
 st.markdown(f"## 📊 {symbol_clean}")
-st.caption(f"Last updated: {row['as_of_date']}  ·  Prices in ₹ (INR)  ·  Source: NSE India")
+st.caption(f"Last updated: {'Live' if live_data and live_data.get('is_live') else row['as_of_date']}  ·  Prices in ₹ (INR)  ·  Source: NSE India & YFinance")
 st.divider()
 
 # ── KPI strip ──────────────────────────────────────────────────────────────────
@@ -256,13 +280,35 @@ price_df = fetch_data(f"""
 if price_df.empty:
     st.info("No historical chart data available for this period.")
 else:
+    # Append Live Data Candle to Chart
+    if live_data and live_data.get("live_price"):
+        last_date = price_df["trade_date"].max()
+        today_date = pd.Timestamp.now().date()
+        if pd.to_datetime(last_date).date() < today_date:
+            live_price = float(live_data["live_price"])
+            prev_close = float(live_data.get("prev_close") or price_df.iloc[-1]["close_price"])
+            new_row = pd.DataFrame([{
+                "trade_date": today_date,
+                "open_price": prev_close,
+                "high_price": max(prev_close, live_price),
+                "low_price": min(prev_close, live_price),
+                "close_price": live_price,
+                "volume": 0,
+                "sma_20": None,
+                "sma_50": None,
+                "rsi_14": None,
+                "daily_return": (live_data.get("change_pct") or 0.0) / 100.0,
+                "is_outlier": False
+            }])
+            price_df = pd.concat([price_df, new_row], ignore_index=True)
+
     fig = make_subplots(
         rows=3, cols=1,
         shared_xaxes=True,
         row_heights=[0.60, 0.20, 0.20],
         vertical_spacing=0.04,
         subplot_titles=(
-            f"{symbol_clean} — Price & Moving Averages",
+            f"{symbol_clean} — Price & Moving Averages {'(Live)' if live_data.get('is_live') else '(Delayed)'}",
             "Trading Volume",
             "RSI (Momentum Indicator)",
         ),
