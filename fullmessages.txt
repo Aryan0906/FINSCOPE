@@ -1,0 +1,89 @@
+feat: add price analytics dashboard page
+
+feat: implement Streamlit consumer dashboard with real-time yfinance market overlays and analytical pages
+
+feat: implement gold pipeline materialization, real-time yfinance quote component, and diagnostic script
+
+feat: implement Streamlit dashboard with price analytics, earnings summary, and RAG-powered Q&A modules while updating architecture documentation.
+
+feat: implement NSE price and fundamental data fetching pipeline and price analytics dashboard page
+
+feat: add gold summary spark job and stock pipeline DAG tests while cleaning up project documentation and obsolete files
+
+feat: add price analytics dashboard, stock pipeline DAG, and Sprint 3 verification script
+
+feat: add PySpark job for Silver-to-Gold stock summary and update project documentation
+
+checkout: temporary commit for worktree checkout
+
+feat: add Spark jobs for processing stock prices and verifying Sprint 2 deliverables
+
+refactor: update column renaming in NSE price fetcher and improve settings retrieval in Spark consumer
+
+feat: enhance test suite with improved error handling and lazy DAG loading
+
+feat: add Kafka producer implementation and establish pytest infrastructure with dependency mocking
+
+refactor: reorganize test suite, add Airflow DAG and pipeline settings, and update project dependencies.
+
+feat: Add Kafka producer for NSE price data and Spark consumer for Delta Lake Bronze
+
+- Implemented kafka_producer.py to fetch NSE price data and publish to Kafka topic.
+- Created spark_bronze_consumer.py to consume data from Kafka and write to Delta Lake Bronze.
+- Added architecture decisions for Kafka and Zookeeper image selection.
+- Updated nse_fetcher.py to improve error handling and data fetching logic.
+- Introduced init files for backend streaming module.
+
+feat: Add infrastructure verification script and update environment configuration
+
+feat: Add post-deployment verification checklist and enhance earnings pipeline
+
+- Created a comprehensive verification checklist for post-deployment checks in VERIFICATION_CHECKLIST.md.
+- Updated stock_pipeline_dag.py to include earnings_ingest task, modifying DAG structure for parallel processing.
+- Added earnings_ingest.py module for analyzing earnings using NSE fundamentals, BART, and FinBERT.
+- Modified db_init.py to create earnings_summaries table with appropriate schema.
+- Enhanced Streamlit app to display earnings analysis and summaries with sentiment scores.
+- Implemented error handling in db_connector.py for database queries.
+- Added populate_test_earnings.py script to insert sample earnings data for testing.
+- Created test_earnings_flow.py and test_earnings_ingest.py scripts for verifying pipeline functionality and module integrity.
+- Updated docker-compose.yml to include Streamlit service for frontend access.
+
+Refactor: Remove real-time price updater and related services
+
+- Deleted `realtime_prices.py`, `realtime_price_service.py`, and associated batch and shell scripts.
+- Updated `docker-compose.yml` to build Airflow image.
+- Modified frontend pages for earnings summaries and Q&A interface, integrating RAG-based querying.
+- Updated requirements to include `jugaad-data` for NSE data fetching.
+
+docs: Remove emojis from README
+
+refactor: Update documentation and code to use official NSE India API for data extraction
+
+feat: Implement real-time price updates and caching mechanism
+
+- Added a new service for real-time price updates (`realtime_price_service.py`) that fetches prices every second during market hours.
+- Introduced a caching mechanism to minimize API calls to the NSE and only update the database when prices change.
+- Created a new module (`nse_fetcher.py`) to handle fetching real-time and historical prices from the NSE API.
+- Updated the `extract.py` and `load.py` modules to integrate with the new real-time pricing logic.
+- Enhanced the `.gitignore` file to exclude IDE settings and temporary files.
+- Added a setup guide (`REALTIME_SETUP.md`) for the new real-time price update feature.
+- Updated frontend components to reflect changes in data handling and display.
+- Removed unnecessary log files and test output files.
+- Updated `requirements.txt` to include the `nsepython` package for real-time data fetching.
+
+fix: Correct symbol handling in stock selection by removing .NS suffix for accurate price queries
+
+refactor: Revamp stock question interface and enhance data retrieval for improved user experience
+
+refactor: Update news feed loading and transform functions to strip .NS suffix from symbols and improve query structure
+
+refactor: Update SQLAlchemy engine type hinting and improve fetch_data function for better clarity and safety
+fix: Change 'updated_at' to 'validated_at' in SQL insert statement for accurate timestamp tracking
+chore: Update Airflow service configuration to use official Docker image
+
+feat: Initialize core application structure including Streamlit frontend, backend ML services, Airflow setup, and database schema.
+
+Add pandas import for data manipulation in price analytics
+
+Initial commit for production NSE stock pipeline sprint 6 completion
+

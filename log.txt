@@ -1,0 +1,200 @@
+commit 3957fb17b9376d845abdcdd0c28ed3cb0ae5ec1e
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Mon Mar 30 10:11:11 2026 +0530
+
+    feat: add price analytics dashboard page
+
+commit e76102218f18c82d650446287c265874ef7a56a5
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Mon Mar 30 10:07:31 2026 +0530
+
+    feat: implement Streamlit consumer dashboard with real-time yfinance market overlays and analytical pages
+
+commit 56b4e00e4138735d5356e35bc19c774edee9999a
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Mon Mar 30 09:54:26 2026 +0530
+
+    feat: implement gold pipeline materialization, real-time yfinance quote component, and diagnostic script
+
+commit ed63e16521b3e10748f32f85d66b44b6064f2714
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Mon Mar 30 09:33:03 2026 +0530
+
+    feat: implement Streamlit dashboard with price analytics, earnings summary, and RAG-powered Q&A modules while updating architecture documentation.
+
+commit 6f14ead39518483931d18f96c3d1889d4ebcb0c9
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 22:27:54 2026 +0530
+
+    feat: implement NSE price and fundamental data fetching pipeline and price analytics dashboard page
+
+commit 1f1ec352f0da8bb073ed175afc20a0a3d958b709
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 21:49:02 2026 +0530
+
+    feat: add gold summary spark job and stock pipeline DAG tests while cleaning up project documentation and obsolete files
+
+commit ada11f35ff1077ab03b9c115f9d25def5f69010b
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 21:26:33 2026 +0530
+
+    feat: add price analytics dashboard, stock pipeline DAG, and Sprint 3 verification script
+
+commit 7bf8e6ca63e5dcbcefff87956600642b7b8ceb33
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 21:13:56 2026 +0530
+
+    feat: add PySpark job for Silver-to-Gold stock summary and update project documentation
+
+commit 08659d2bccb773cb0bac86f3a4c7ff1974548773
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 20:41:26 2026 +0530
+
+    checkout: temporary commit for worktree checkout
+
+commit 4d510fe5dc27f7c12cde2bb985cde43af68185b5
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 10:36:20 2026 +0530
+
+    feat: add Spark jobs for processing stock prices and verifying Sprint 2 deliverables
+
+commit 775fd8d18b17a39f635550e4c8b9986aa104dc6d
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 10:11:20 2026 +0530
+
+    refactor: update column renaming in NSE price fetcher and improve settings retrieval in Spark consumer
+
+commit 41adc35625a13f186eb4ae991c296a670203e81f
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 10:07:44 2026 +0530
+
+    feat: enhance test suite with improved error handling and lazy DAG loading
+
+commit 3cdbf184f98721f306b03f2b20712b0ef8df3d42
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 01:09:08 2026 +0530
+
+    feat: add Kafka producer implementation and establish pytest infrastructure with dependency mocking
+
+commit a939c2f551dbf2d479add75480db5068c23e32f1
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 01:01:01 2026 +0530
+
+    refactor: reorganize test suite, add Airflow DAG and pipeline settings, and update project dependencies.
+
+commit 02f3c5c5823b0cea64a6d13d95948d047607a7cf
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sun Mar 29 00:17:17 2026 +0530
+
+    feat: Add Kafka producer for NSE price data and Spark consumer for Delta Lake Bronze
+    
+    - Implemented kafka_producer.py to fetch NSE price data and publish to Kafka topic.
+    - Created spark_bronze_consumer.py to consume data from Kafka and write to Delta Lake Bronze.
+    - Added architecture decisions for Kafka and Zookeeper image selection.
+    - Updated nse_fetcher.py to improve error handling and data fetching logic.
+    - Introduced init files for backend streaming module.
+
+commit b47dba3f41e45164b0c7379d6925808fc8e1ac85
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sat Mar 28 22:48:49 2026 +0530
+
+    feat: Add infrastructure verification script and update environment configuration
+
+commit 5abd4ae285e9d81cf7b74abbeea1f599e0df309e
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sat Mar 28 19:56:26 2026 +0530
+
+    feat: Add post-deployment verification checklist and enhance earnings pipeline
+    
+    - Created a comprehensive verification checklist for post-deployment checks in VERIFICATION_CHECKLIST.md.
+    - Updated stock_pipeline_dag.py to include earnings_ingest task, modifying DAG structure for parallel processing.
+    - Added earnings_ingest.py module for analyzing earnings using NSE fundamentals, BART, and FinBERT.
+    - Modified db_init.py to create earnings_summaries table with appropriate schema.
+    - Enhanced Streamlit app to display earnings analysis and summaries with sentiment scores.
+    - Implemented error handling in db_connector.py for database queries.
+    - Added populate_test_earnings.py script to insert sample earnings data for testing.
+    - Created test_earnings_flow.py and test_earnings_ingest.py scripts for verifying pipeline functionality and module integrity.
+    - Updated docker-compose.yml to include Streamlit service for frontend access.
+
+commit 64d9303ddf7a8050f55c16270633e064c6cd75b4
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sat Mar 28 11:35:07 2026 +0530
+
+    Refactor: Remove real-time price updater and related services
+    
+    - Deleted `realtime_prices.py`, `realtime_price_service.py`, and associated batch and shell scripts.
+    - Updated `docker-compose.yml` to build Airflow image.
+    - Modified frontend pages for earnings summaries and Q&A interface, integrating RAG-based querying.
+    - Updated requirements to include `jugaad-data` for NSE data fetching.
+
+commit 2f83863f612d6d29705aca171736a16d079c89a6
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sat Mar 28 10:22:26 2026 +0530
+
+    docs: Remove emojis from README
+
+commit af47d51905b7a3b9c880feb292538db7d78f5ae7
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sat Mar 28 10:16:22 2026 +0530
+
+    refactor: Update documentation and code to use official NSE India API for data extraction
+
+commit 43417fff8bacf7d00231d87a9560d71a1511949a
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Sat Mar 28 09:46:38 2026 +0530
+
+    feat: Implement real-time price updates and caching mechanism
+    
+    - Added a new service for real-time price updates (`realtime_price_service.py`) that fetches prices every second during market hours.
+    - Introduced a caching mechanism to minimize API calls to the NSE and only update the database when prices change.
+    - Created a new module (`nse_fetcher.py`) to handle fetching real-time and historical prices from the NSE API.
+    - Updated the `extract.py` and `load.py` modules to integrate with the new real-time pricing logic.
+    - Enhanced the `.gitignore` file to exclude IDE settings and temporary files.
+    - Added a setup guide (`REALTIME_SETUP.md`) for the new real-time price update feature.
+    - Updated frontend components to reflect changes in data handling and display.
+    - Removed unnecessary log files and test output files.
+    - Updated `requirements.txt` to include the `nsepython` package for real-time data fetching.
+
+commit 0b10b04debe1a1d9ed6d4a2c422ef9f0013b2665
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Fri Mar 27 23:13:14 2026 +0530
+
+    fix: Correct symbol handling in stock selection by removing .NS suffix for accurate price queries
+
+commit 3f0cb68f9c50afbcfcf0cdb3c7e38e6d69c31e74
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Fri Mar 27 23:06:58 2026 +0530
+
+    refactor: Revamp stock question interface and enhance data retrieval for improved user experience
+
+commit 2ee16d4b9ab425aa47c17c82e2f43f37faf0b46e
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Fri Mar 27 22:49:17 2026 +0530
+
+    refactor: Update news feed loading and transform functions to strip .NS suffix from symbols and improve query structure
+
+commit eca42c93981917ca39ffc14a92595432552f748c
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Fri Mar 27 22:35:21 2026 +0530
+
+    refactor: Update SQLAlchemy engine type hinting and improve fetch_data function for better clarity and safety
+    fix: Change 'updated_at' to 'validated_at' in SQL insert statement for accurate timestamp tracking
+    chore: Update Airflow service configuration to use official Docker image
+
+commit c1273c6d4466a63db2a0f6020788b225e19aefa8
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Fri Mar 27 22:22:31 2026 +0530
+
+    feat: Initialize core application structure including Streamlit frontend, backend ML services, Airflow setup, and database schema.
+
+commit b26528b1bf1c7ea243f37ccd226f97f5ce66c519
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Thu Mar 26 09:05:07 2026 +0530
+
+    Add pandas import for data manipulation in price analytics
+
+commit b70f4de43947435529b826262918104da4eb556d
+Author: Aryan0906 <AryanModh.cse23@adaniuni.ac.in>
+Date:   Thu Mar 26 08:56:07 2026 +0530
+
+    Initial commit for production NSE stock pipeline sprint 6 completion

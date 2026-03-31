@@ -29,7 +29,9 @@ RUN mkdir -p /opt/delta-lake && chown airflow:root /opt/delta-lake
 # ─────────────────────────────────────────────────────────────
 # AIRFLOW: Install Python dependencies
 # ─────────────────────────────────────────────────────────────
-USER airflow
+USER airflowYour plan's baseline quota will refresh on 4/5/2026, 4:38:22 PM. To continue using this model now, enable AI Credit overages.
+
+
 
 # Copy and install requirements
 COPY requirements.txt /tmp/requirements.txt
